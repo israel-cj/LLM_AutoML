@@ -1,89 +1,81 @@
 import copy
 import numpy as np
-
 import openai
-from sklearn.model_selection import RepeatedKFold
-from .caafe_evaluate import (
-    evaluate_dataset,
-)
+from sklearn.model_selection import train_test_split
 from .run_llm_code import run_llm_code
+from data.similarity import TransferedPipelines
 
 
 def get_prompt(
-        df, ds, iterative=1, data_description_unparsed=None, samples=None, **kwargs
+        name_dataset, hf_token, **kwargs
 ):
-    how_many = (
-        "up to 10 useful columns. Generate as many features as useful for downstream classifier, but as few as necessary to reach good performance."
-        if iterative == 1
-        else "exactly one useful column"
-    )
+    similar_pipelines = TransferedPipelines(hf_token=hf_token, name_dataset=name_dataset, number_of_pipelines=5)
     return f"""
-The dataframe `df` is loaded and in memory. Columns are also named attributes.
-Description of the dataset in `df` (column dtypes might be inaccurate):
-"{data_description_unparsed}"
+The dataframe split in ‘X_train’ and ‘y_train’ is loaded in memory.
+This code was written by an expert data scientist working to create a suitable pipeline (preprocessing techniques and estimator) given such a dataset. It is a snippet of code that import the packages necessary to create a ‘sklearn’ pipeline together with a description. This code takes inspiration from previous similar pipelines and their respective ‘Log loss’ which worked for related ‘X_train’ and ‘y_train’. Those examples contain the word ‘Pipeline’ which refers to the preprocessing steps (optional) and estimators necessary, the word ‘data’ refers to ‘X_train’ and ‘y_train’ used during training, and finally ‘Log loss’ represent the performance of the model (the closes to 0 the better):
+“
+{similar_pipelines}
+“
 
-Columns in `df` (true feature dtypes listed here, categoricals encoded as int):
-{samples}
+For instance, let’s consider you took inspiration from the next pipeline given that its ‘Log loss’ was the smallest from the examples provided above:
 
-This code was written by an expert datascientist working to improve predictions. It is a snippet of code that adds new columns to the dataset.
-Number of samples (rows) in training dataset: {int(len(df))}
+"Pipeline: GradientBoostingClassifier(RBFSampler(Normalizer(data, Normalizer.norm='l1'), RBFSampler.gamma=0.35000000000000003), GradientBoostingClassifier.learning_rate=0.5, GradientBoostingClassifier.max_depth=10, GradientBoostingClassifier.max_features=0.2, GradientBoostingClassifier.min_samples_leaf=10, GradientBoostingClassifier.min_samples_split=17, GradientBoostingClassifier.n_estimators=100, GradientBoostingClassifier.subsample=0.3) Log loss: 0.4515132104250264"
 
-This code generates additional columns that are useful for a downstream classification algorithm (such as XGBoost) predicting \"{ds[4][-1]}\".
-Additional columns add new semantic information, that is they use real world knowledge on the dataset. They can e.g. be feature combinations, transformations, aggregations where the new column is a function of the existing columns.
-The scale of columns and offset does not matter. Make sure all used columns exist. Follow the above description of columns closely and consider the datatypes and meanings of classes.
-This code also drops columns, if these may be redundant and hurt the predictive performance of the downstream classifier (Feature selection). Dropping columns may help as the chance of overfitting is lower, especially if the dataset is small.
-The classifier will be trained on the dataset with the generated columns and evaluated on a holdout set. The evaluation metric is accuracy. The best performing code will be selected.
-Added columns can be used in other codeblocks, dropped columns are not available anymore.
+From the inspired snippet would expect something like the next codeblock:
 
-Code formatting for each added column:
-```python
-# (Feature name and description)
-# Usefulness: (Description why this adds useful real world knowledge to classify \"{ds[4][-1]}\" according to dataset description and attributes.)
-# Input samples: (Three samples of the columns used in the following code, e.g. '{df.columns[0]}': {list(df.iloc[:3, 0].values)}, '{df.columns[1]}': {list(df.iloc[:3, 1].values)}, ...)
-(Some pandas code using {df.columns[0]}', '{df.columns[1]}', ... to add a new column for each row in df)
+````python
+# Description: This pipeline is built using Gradient Boosting for classification. This algorithm builds an additive model in a forward stage-wise fashion; it allows for the optimization of arbitrary differentiable loss functions. It is necessary to normalize the data before feeding the model
+
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.preprocessing import Normalizer
+from sklearn.kernel_approximation import RBFSampler
+from sklearn.pipeline import Pipeline
+
+step_1 = ('Normalizer', Normalizer(norm='l1'))
+step_2 = ('RBFSampler', RBFSampler(gamma=0.38))
+step_3 = ('GradientBoostingClassifier', GradientBoostingClassifier(n_estimators=90,
+                                                                learning_rate=0.4,
+                                                                max_depth=11,
+                                                                min_samples_split=18,
+                                                                min_samples_leaf=11,
+                                                                subsample=0.3,
+                                                                max_features=0.2))
+
+pipe = Pipeline([step_1, step_2, step_3])
+pipe.fit(X_train, y_train)
+
 ```end
 
-Code formatting for dropping columns:
-```python
-# Explanation why the column XX is dropped
-df.drop(columns=['XX'], inplace=True)
-```end
-
-Each codeblock generates {how_many} and can drop unused columns (Feature selection).
+Each codeblock generates exactly one useful pipeline. Which will be evaluated with Log loss. 
+Remember, you 
 Each codeblock ends with ```end and starts with "```python"
 Codeblock:
 """
 
-
 # Each codeblock either generates {how_many} or drops bad columns (Feature selection).
 
 
-def build_prompt_from_df(ds, df, iterative=1):
-    data_description_unparsed = ds[-1]
-
-    """
-    We are here
-    """
+def build_prompt_from_df(name_dataset, hf_token):
     prompt = get_prompt(
-        df,
-        ds,
-        data_description_unparsed=data_description_unparsed,
+        name_dataset,
+        hf_token,
     )
 
     return prompt
 
 
 def generate_features(
-        ds,
-        df,
+        X,
+        y,
         model="gpt-3.5-turbo",
         just_print_prompt=False,
         iterative=1,
-        metric_used=None,
         iterative_method="logistic",
         display_method="markdown",
         n_splits=10,
         n_repeats=2,
+        name_dataset = None,
+        hf_token=None,
 ):
     def format_for_display(code):
         code = code.replace("```python", "").replace("```", "").replace("<end>", "")
@@ -96,12 +88,7 @@ def generate_features(
     else:
 
         display_method = print
-
-    assert (
-            iterative == 1 or metric_used is not None
-    ), "metric_used must be set if iterative"
-
-    prompt = build_prompt_from_df(ds, df, iterative=iterative)
+    prompt = build_prompt_from_df(name_dataset, hf_token, iterative=iterative)
 
     if just_print_prompt:
         code, prompt = None, prompt
@@ -122,96 +109,37 @@ def generate_features(
         code = code.replace("```python", "").replace("```", "").replace("<end>", "")
         return code
 
-    def execute_and_evaluate_code_block(full_code, code):
-        old_accs, old_rocs, accs, rocs = [], [], [], []
+    def execute_and_evaluate_code_block(code):
+        X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=0)
+        try:
+            """We are here"""
+            pipe = run_llm_code(
+                code,
+                X_train,
+                y_train,
+            )
+        except Exception as e:
+            display_method(f"Error in code execution. {type(e)} {e}")
+            display_method(f"```python\n{format_for_display(code)}\n```\n")
+            return e, None
 
-        ss = RepeatedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=0)
-        for (train_idx, valid_idx) in ss.split(df):
-            df_train, df_valid = df.iloc[train_idx], df.iloc[valid_idx]
+        from contextlib import contextmanager
+        import sys, os
 
-            # Remove target column from df_train
-            target_train = df_train[ds[4][-1]]
-            target_valid = df_valid[ds[4][-1]]
-            df_train = df_train.drop(columns=[ds[4][-1]])
-            df_valid = df_valid.drop(columns=[ds[4][-1]])
-
-            df_train_extended = copy.deepcopy(df_train)
-            df_valid_extended = copy.deepcopy(df_valid)
-
+        with open(os.devnull, "w") as devnull:
+            old_stdout = sys.stdout
+            sys.stdout = devnull
             try:
-                df_train = run_llm_code(
-                    full_code,
-                    df_train,
-                    convert_categorical_to_integer=not ds[0].startswith("kaggle"),
-                )
-                df_valid = run_llm_code(
-                    full_code,
-                    df_valid,
-                    convert_categorical_to_integer=not ds[0].startswith("kaggle"),
-                )
-                df_train_extended = run_llm_code(
-                    full_code + "\n" + code,
-                    df_train_extended,
-                    convert_categorical_to_integer=not ds[0].startswith("kaggle"),
-                )
-                df_valid_extended = run_llm_code(
-                    full_code + "\n" + code,
-                    df_valid_extended,
-                    convert_categorical_to_integer=not ds[0].startswith("kaggle"),
-                )
+                performance = pipe.score(X_test, y_test)
+            finally:
+                sys.stdout = old_stdout
 
-            except Exception as e:
-                display_method(f"Error in code execution. {type(e)} {e}")
-                display_method(f"```python\n{format_for_display(code)}\n```\n")
-                return e, None, None, None, None
-
-            # Add target column back to df_train
-            df_train[ds[4][-1]] = target_train
-            df_valid[ds[4][-1]] = target_valid
-            df_train_extended[ds[4][-1]] = target_train
-            df_valid_extended[ds[4][-1]] = target_valid
-
-            from contextlib import contextmanager
-            import sys, os
-
-            with open(os.devnull, "w") as devnull:
-                old_stdout = sys.stdout
-                sys.stdout = devnull
-                try:
-                    result_old = evaluate_dataset(
-                        df_train=df_train,
-                        df_test=df_valid,
-                        prompt_id="XX",
-                        name=ds[0],
-                        method=iterative_method,
-                        metric_used=metric_used,
-                        seed=0,
-                        target_name=ds[4][-1],
-                    )
-
-                    result_extended = evaluate_dataset(
-                        df_train=df_train_extended,
-                        df_test=df_valid_extended,
-                        prompt_id="XX",
-                        name=ds[0],
-                        method=iterative_method,
-                        metric_used=metric_used,
-                        seed=0,
-                        target_name=ds[4][-1],
-                    )
-                finally:
-                    sys.stdout = old_stdout
-
-            old_accs += [result_old["roc"]]
-            old_rocs += [result_old["acc"]]
-            accs += [result_extended["roc"]]
-            rocs += [result_extended["acc"]]
-        return None, rocs, accs, old_rocs, old_accs
+        return None, performance
 
     messages = [
         {
             "role": "system",
-            "content": "You are an expert datascientist assistant solving Kaggle problems. You answer only by generating code. Answer as concisely as possible.",
+            "content": "You are an expert datascientist assistant creating a Pipeline for a dataset X_train, y_train. You answer only by generating code. Answer as concisely as possible.",
         },
         {
             "role": "user",
@@ -221,8 +149,6 @@ def generate_features(
     display_method(f"*Dataset description:*\n {ds[-1]}")
 
     n_iter = iterative
-    full_code = ""
-
     i = 0
     while i < n_iter:
         try:
@@ -231,61 +157,34 @@ def generate_features(
             display_method("Error in LLM API." + str(e))
             continue
         i = i + 1
-        e, rocs, accs, old_rocs, old_accs = execute_and_evaluate_code_block(
-            full_code, code
-        )
+        e, performance = execute_and_evaluate_code_block(code)
         if e is not None:
             messages += [
                 {"role": "assistant", "content": code},
                 {
                     "role": "user",
-                    "content": f"""Code execution failed with error: {type(e)} {e}.\n Code: ```python{code}```\n Generate next feature (fixing error?):
+                    "content": f"""Code execution failed with error: {type(e)} {e}.\n Code: ```python{code}```\n Generate next pipeline (fixing error?):
                                 ```python
                                 """,
                 },
             ]
             continue
 
-        # importances = get_leave_one_out_importance(
-        #    df_train_extended,
-        #    df_valid_extended,
-        #    ds,
-        #    iterative_method,
-        #    metric_used,
-        # )
-        # """ROC Improvement by using each feature: {importances}"""
-
-        improvement_roc = np.nanmean(rocs) - np.nanmean(old_rocs)
-        improvement_acc = np.nanmean(accs) - np.nanmean(old_accs)
-
-        add_feature = True
-        add_feature_sentence = "The code was executed and changes to ´df´ were kept."
-        if improvement_roc + improvement_acc <= 0:
-            add_feature = False
-            add_feature_sentence = f"The last code changes to ´df´ were discarded. (Improvement: {improvement_roc + improvement_acc})"
+        if isinstance(performance, float):
+            valid_pipeline = True
+            pipeline_sentence = f"The code was executed and generated a Pipeline ´pipe´ with score {performance}"
+        else:
+            valid_pipeline = False
+            pipeline_sentence = "The last code did not generate a valid ´pipe´, it was discarded."
 
         display_method(
             "\n"
             + f"*Iteration {i}*\n"
+            + f"*Valie pipeline {str(valid_pipeline)}*\n"
             + f"```python\n{format_for_display(code)}\n```\n"
-            + f"Performance before adding features ROC {np.nanmean(old_rocs):.3f}, ACC {np.nanmean(old_accs):.3f}.\n"
-            + f"Performance after adding features ROC {np.nanmean(rocs):.3f}, ACC {np.nanmean(accs):.3f}.\n"
-            + f"Improvement ROC {improvement_roc:.3f}, ACC {improvement_acc:.3f}.\n"
-            + f"{add_feature_sentence}\n"
+            + f"Performance {performance} \n"
+            + f"{pipeline_sentence}\n"
             + f"\n"
         )
 
-        if len(code) > 10:
-            messages += [
-                {"role": "assistant", "content": code},
-                {
-                    "role": "user",
-                    "content": f"""Performance after adding feature ROC {np.nanmean(rocs):.3f}, ACC {np.nanmean(accs):.3f}. {add_feature_sentence}
-Next codeblock:
-""",
-                },
-            ]
-        if add_feature:
-            full_code += code
-
-    return full_code, prompt, messages
+    return code, prompt, messages

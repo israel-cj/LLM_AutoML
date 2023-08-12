@@ -16,30 +16,24 @@ for task_id in tasks:
     benchmark_ids.append(datasetID)
 
 openai.api_key = " "
-dataset = openml.datasets.get_dataset(41078) # iris
+hf_token = ''
+name_dataset = 'ada'
+# dataset = openml.datasets.get_dataset(41078) # iris
+dataset = openml.datasets.get_dataset(benchmark_ids[0]) # iris
 X, y, categorical_indicator, attribute_names = dataset.get_data(
     dataset_format="dataframe", target=dataset.default_target_attribute
 )
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=0)
 
-df_train = pd.DataFrame(
-        data=np.concatenate([X_train, np.expand_dims(y_train, -1)], -1), columns=attribute_names + [dataset.default_target_attribute]
-    )
-df_test = pd.DataFrame(
-        data=np.concatenate([X_test, np.expand_dims(y_test, -1)], -1), columns=attribute_names + [dataset.default_target_attribute]
-    )
-
 ### Setup and Run LLM pipeline - This will be billed to your OpenAI Account!
 
-clf = LLM_pipeline(llm_model="gpt-3.5-turbo", iterations=3)
+clf = LLM_pipeline(llm_model="gpt-3.5-turbo", iterations=3, name_dataset=name_dataset, hf_token=hf_token)
 
 # The iterations happen here:
-clf.fit_pandas(df_train,
-                 target_column_name=dataset.default_target_attribute,
-                 dataset_description=dataset.description)
+clf.fit(X_train, y_train)
 
 # This process is done only once
-pred = clf.predict(df_test)
+pred = clf.predict(X_test)
 acc = accuracy_score(pred, y_test)
 print(f'LLM Pipeline accuracy {acc}')

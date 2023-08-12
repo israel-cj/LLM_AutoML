@@ -2,7 +2,6 @@ from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
 from .run_llm_code import run_llm_code
 from .llmpipeline import generate_features
-from .metrics import auc_metric, accuracy_metric
 import pandas as pd
 import numpy as np
 from typing import Optional
@@ -28,35 +27,19 @@ class LLM_pipeline():
             llm_model: str = "gpt-3.5-turbo",
             n_splits: int = 10,
             n_repeats: int = 2,
+            name_dataset = None,
+            hf_token=None,
     ) -> None:
         self.llm_model = llm_model
         self.iterations = iterations
         self.optimization_metric = optimization_metric
         self.n_splits = n_splits
         self.n_repeats = n_repeats
-
-    def fit_pandas(self, df, dataset_description, target_column_name, **kwargs):
-        """
-        Fit the classifier to a pandas DataFrame.
-
-        Parameters:
-        df (pandas.DataFrame): The DataFrame to fit the classifier to.
-        dataset_description (str): A description of the dataset.
-        target_column_name (str): The name of the target column in the DataFrame.
-        **kwargs: Additional keyword arguments to pass to the base classifier's fit method.
-        """
-        feature_columns = list(df.drop(columns=[target_column_name]).columns)
-
-        X, y = (
-            df.drop(columns=[target_column_name]).values,
-            df[target_column_name].values,
-        )
-        return self.fit(
-            X, y, dataset_description, feature_columns, target_column_name, **kwargs
-        )
-
+        self.name_dataset = name_dataset
+        self.hf_token = hf_token
+        self.pipe = None
     def fit(
-            self, X, y, dataset_description, feature_names, target_name, disable_caafe=False
+            self, X, y, disable_caafe=False
     ):
         """
         Fit the model to the training data.
@@ -67,140 +50,40 @@ class LLM_pipeline():
             The training data features.
         y : np.ndarray
             The training data target values.
-        dataset_description : str
-            A description of the dataset.
-        feature_names : List[str]
-            The names of the features in the dataset.
-        target_name : str
-            The name of the target variable in the dataset.
-        disable_caafe : bool, optional
-            Whether to disable the CAAFE algorithm, by default False.
+
         """
         # if y.shape[1]>1:
         #    y =
-        self.dataset_description = dataset_description
-        self.feature_names = list(feature_names)
-        self.target_name = target_name
 
         self.X_ = X
         self.y_ = y
 
-        ds = [
-            "dataset",
+        self.code, prompt, messages = generate_features(
             X,
             y,
-            [],
-            self.feature_names + [target_name],
-            {},
-            dataset_description,
-        ]
-        # Add X and y as one dataframe
-        df_train = pd.DataFrame(
-            X,
-            columns=self.feature_names,
-        )
-        df_train[target_name] = y
-
-        self.code, prompt, messages = generate_features(
-            ds,
-            df_train,
             model=self.llm_model,
             iterative=self.iterations,
-            metric_used=auc_metric,
             iterative_method=self.base_classifier,
             display_method="markdown",
             n_splits=self.n_splits,
             n_repeats=self.n_repeats,
+            name_dataset = self.name_dataset,
+            hf_token = self.hf_token
         )
 
-        df_train = run_llm_code(
+        self.pipe = run_llm_code(
             self.code,
-            df_train,
-        )
-
-        X, y = (
-            df_train.drop(columns=[target_name]).values,
-            df_train[target_name].values,
-        )
-        ds = [
-            "dataset",
             X,
             y,
-            [],
-            self.feature_names + [target_name],
-            {},
-            dataset_description,
-        ]
-
-        self.code, prompt, messages = generate_features(
-            ds,
-            df_train,
-            model=self.llm_model,
-            iterative=self.iterations,
-            metric_used=auc_metric,
-            iterative_method=self.base_classifier,
-            display_method="markdown",
-            n_splits=self.n_splits,
-            n_repeats=self.n_repeats,
         )
-
-        df_train = run_llm_code(
-            self.code,
-            df_train,
-        )
-
-        df_train, _, self.mappings = make_datasets_numeric(
-            df_train, df_test=None, target_column=target_name, return_mappings=True
-        )
-
-        df_train, y = split_target_column(df_train, target_name)
-
-        X, y = df_train.values, y.values.astype(int)
-        # Check that X and y have correct shape
-        # X, y = check_X_y(X, y)
-
-        # Store the classes seen during fit
-        self.classes_ = unique_labels(y)
-
-        self.base_classifier.fit(X, y)
-
-        # Return the classifier
-        return self
-
-    def predict_preprocess(self, X):
-        """
-        Helper functions for preprocessing the data before making predictions.
-
-        Parameters:
-        X (pandas.DataFrame): The DataFrame to make predictions on.
-
-        Returns:
-        numpy.ndarray: The preprocessed input data.
-        """
-        # check_is_fitted(self)
-
-        if type(X) != pd.DataFrame:
-            X = pd.DataFrame(X, columns=self.X_.columns)
-        X, _ = split_target_column(X, self.target_name)
-
-        X = run_llm_code(
-            self.code,
-            X,
-        )
-
-        X = make_dataset_numeric(X, mappings=self.mappings)
-
-        X = X.values
-
-        # Input validation
-        # X = check_array(X)
-
-        return X
-
-    def predict_proba(self, X):
-        X = self.predict_preprocess(X)
-        return self.base_classifier.predict_proba(X)
+        # Return the model
+        return self.pipe
 
     def predict(self, X):
-        X = self.predict_preprocess(X)
-        return self.base_classifier.predict(X)
+        return self.pipe.predict(X)
+
+    def predict_log_proba(self, X):
+        return self.pipe.predict_log_proba(X)
+
+    def predict_proba(self, X):
+        return self.pipe.predict_proba(X)
