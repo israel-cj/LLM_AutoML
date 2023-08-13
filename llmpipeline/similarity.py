@@ -12,7 +12,7 @@ def TransferedPipelines(hf_token, name_dataset=None, number_of_pipelines=5):
     
 
     # Open the JSON file
-    with open('data/data.json', 'r') as f:
+    with open('data.json', 'r') as f:
         # Load the JSON data which contains the pipelines from the AutoMLBenchmark
         automl_benchmark_data = json.load(f)
         
