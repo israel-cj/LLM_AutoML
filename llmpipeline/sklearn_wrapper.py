@@ -28,7 +28,8 @@ class LLM_pipeline():
             n_splits: int = 10,
             n_repeats: int = 2,
             name_dataset = None,
-            hf_token=None,
+            hf_token = None,
+            make_ensemble = True,
     ) -> None:
         self.llm_model = llm_model
         self.iterations = iterations
@@ -38,6 +39,7 @@ class LLM_pipeline():
         self.name_dataset = name_dataset
         self.hf_token = hf_token
         self.pipe = None
+        self.make_ensemble = make_ensemble
     def fit(
             self, X, y, disable_caafe=False
     ):
@@ -63,7 +65,7 @@ class LLM_pipeline():
 
         self.X_ = X
         self.y_ = y
-        self.code, prompt, messages = generate_features(
+        self.code, prompt, messages, list_codeblocks = generate_features(
             X,
             y,
             model=self.llm_model,
@@ -74,12 +76,25 @@ class LLM_pipeline():
             name_dataset = self.name_dataset,
             hf_token = self.hf_token
         )
-
         self.pipe = run_llm_code(
             self.code,
             X,
             y,
         )
+        # Create an ensemble if we have more than 1 useful pipeline
+        if len(list_codeblocks)>1 and self.make_ensemble:
+            print('An Ensemble model will be created')
+            import sklearn.ensemble
+            list_pipelines = []
+            for code_pipe in list_codeblocks:
+                this_pipe = run_llm_code(code_pipe, X, y)
+                list_pipelines.append(this_pipe)
+
+            # Create the ensemble
+            self.pipe = sklearn.ensemble.VotingClassifier(estimators=[('pipeline_{}'.format(i), pipeline) for i, pipeline in enumerate(list_pipelines)], voting='hard')
+            # Fit the ensemble to the training data
+            self.pipe.fit(X, y)
+
         # Return the model
         return self.pipe
 

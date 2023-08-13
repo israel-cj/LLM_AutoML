@@ -54,6 +54,7 @@ def generate_features(
         name_dataset = None,
         hf_token=None,
 ):
+    list_codeblocks = []
     def format_for_display(code):
         code = code.replace("```python", "").replace("```", "").replace("<end>", "")
         return code
@@ -131,6 +132,7 @@ def generate_features(
     while i < n_iter:
         try:
             code = generate_code(messages)
+            list_codeblocks.append(code)
         except Exception as e:
             display_method("Error in LLM API." + str(e))
             continue
@@ -176,4 +178,4 @@ def generate_features(
                 },
             ]
 
-    return code, prompt, messages
+    return code, prompt, messages, list_codeblocks
