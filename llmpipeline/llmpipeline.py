@@ -96,6 +96,7 @@ def generate_features(
                 y_train,
             )
         except Exception as e:
+            pipe = None
             display_method(f"Error in code execution. {type(e)} {e}")
             display_method(f"```python\n{format_for_display(code)}\n```\n")
             return e, None
@@ -111,7 +112,7 @@ def generate_features(
             finally:
                 sys.stdout = old_stdout
 
-        return None, performance
+        return None, performance, pipe
 
     messages = [
         {
@@ -134,7 +135,7 @@ def generate_features(
             display_method("Error in LLM API." + str(e))
             continue
         i = i + 1
-        e, performance = execute_and_evaluate_code_block(code)
+        e, performance, pipe = execute_and_evaluate_code_block(code)
         if e is not None:
             messages += [
                 {"role": "assistant", "content": code},
@@ -163,5 +164,16 @@ def generate_features(
             + f"{pipeline_sentence}\n"
             + f"\n"
         )
+
+        if len(code) > 10:
+            messages += [
+                {"role": "assistant", "content": code},
+                {
+                    "role": "user",
+                    "content": f"""The pipeline {pipe} provides a accuracy performance of {performance}.
+        Next codeblock:
+        """,
+                },
+            ]
 
     return code, prompt, messages

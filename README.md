@@ -10,36 +10,16 @@ This code was written by an expert data scientist working to create a suitable p
 {similar_pipelines}
 “
 
-For instance, let’s consider you took inspiration from the next pipeline given that its ‘Log loss’ was the smallest from the examples provided above:
-
-"Pipeline: GradientBoostingClassifier(RBFSampler(Normalizer(data, Normalizer.norm='l1'), RBFSampler.gamma=0.35000000000000003), GradientBoostingClassifier.learning_rate=0.5, GradientBoostingClassifier.max_depth=10, GradientBoostingClassifier.max_features=0.2, GradientBoostingClassifier.min_samples_leaf=10, GradientBoostingClassifier.min_samples_split=17, GradientBoostingClassifier.n_estimators=100, GradientBoostingClassifier.subsample=0.3) Log loss: 0.4515132104250264"
-
-From the inspired snippet would expect something like the next codeblock:
+Code formatting for each pipeline created:
 
 ````python
-# Description: This pipeline is built using Gradient Boosting for classification. This algorithm builds an additive model in a forward stage-wise fashion; it allows for the optimization of arbitrary differentiable loss functions. It is necessary to normalize the data before feeding the model
-
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.preprocessing import Normalizer
-from sklearn.kernel_approximation import RBFSampler
-from sklearn.pipeline import Pipeline
-
-step_1 = ('Normalizer', Normalizer(norm='l1'))
-step_2 = ('RBFSampler', RBFSampler(gamma=0.38))
-step_3 = ('GradientBoostingClassifier', GradientBoostingClassifier(n_estimators=90,
-                                                                learning_rate=0.4,
-                                                                max_depth=11,
-                                                                min_samples_split=18,
-                                                                min_samples_leaf=11,
-                                                                subsample=0.3,
-                                                                max_features=0.2))
-
-pipe = Pipeline([step_1, step_2, step_3])
-pipe = pipe.fit(X_train, y_train)
+# Type of pipeline and description why this pipeline could work
+(Some sklearn import packages and code using 'sklearn' to create a pipeline object 'pipe'. In addition call its respective 'fit' function to feed the model with 'X_train' and 'y_train')
 ```end
 
 Each codeblock generates exactly one useful pipeline. Which will be evaluated with Log loss.
-Remember, you
-Each codeblock ends with ```end and starts with "```python"
+Each codeblock ends with "```end" and starts with "```python"
+Make sure that along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn.
 Codeblock:
+"""
 
