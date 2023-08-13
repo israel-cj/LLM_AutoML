@@ -94,7 +94,11 @@ def generate_features(
         return code
 
     def execute_and_evaluate_code_block(code):
-        X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=0)
+        if task == "classification":
+            X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=0)
+        else:
+            X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
         try:
             """We are here"""
             pipe = run_llm_code(
@@ -106,7 +110,7 @@ def generate_features(
             pipe = None
             display_method(f"Error in code execution. {type(e)} {e}")
             display_method(f"```python\n{format_for_display(code)}\n```\n")
-            return e, None
+            return e, None, None
 
         from contextlib import contextmanager
         import sys, os
