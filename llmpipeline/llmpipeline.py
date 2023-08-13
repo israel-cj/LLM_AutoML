@@ -14,7 +14,7 @@ def get_prompt(
         metric_prompt = 'Log loss'
     else:
         metric_prompt = 'Mean Squared Error'
-        additional_data = f"Make sure to always use “SimpleImputer” since ‘Nan’ values are not allowed in {task}"
+        additional_data = f"Make sure to always use 'SimpleImputer' since ‘Nan’ values are not allowed in {task}"
     similar_pipelines = TransferedPipelines(hf_token=hf_token, name_dataset=name_dataset, task=task, number_of_pipelines=5)
     return f"""
 The dataframe split in ‘X_train’ and ‘y_train’ is loaded in memory.
