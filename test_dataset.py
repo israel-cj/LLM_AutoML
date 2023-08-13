@@ -13,8 +13,8 @@ for task_id in tasks:
     datasetID = task.dataset_id
     benchmark_ids.append(datasetID)
 
-openai.api_key = "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"
-hf_token = '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'
+openai.api_key = ""
+hf_token = ''
 name_dataset = 'wilt'
 # dataset = openml.datasets.get_dataset(41078) # iris
 dataset = openml.datasets.get_dataset(benchmark_ids[5]) # 5='wilt'

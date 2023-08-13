@@ -36,11 +36,10 @@ step_3 = ('GradientBoostingClassifier', GradientBoostingClassifier(n_estimators=
 
 pipe = Pipeline([step_1, step_2, step_3])
 pipe = pipe.fit(X_train, y_train)
-
 ```end
 
 Each codeblock generates exactly one useful pipeline. Which will be evaluated with Log loss.
 Remember, you
 Each codeblock ends with ```end and starts with "```python"
 Codeblock:
-````
+
