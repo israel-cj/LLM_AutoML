@@ -14,7 +14,7 @@ def get_prompt(
         metric_prompt = 'Log loss'
     else:
         metric_prompt = 'Mean Squared Error'
-        additional_data = f"Make sure to always use 'SimpleImputer' since ‘Nan’ values are not allowed in {task}"
+        additional_data = f"Make sure to always use 'SimpleImputer' since ‘Nan’ values are not allowed in {task}, and call ‘f_regression’ if it will be used in the Pipeline"
     similar_pipelines = TransferedPipelines(hf_token=hf_token, name_dataset=name_dataset, task=task, number_of_pipelines=5)
     return f"""
 The dataframe split in ‘X_train’ and ‘y_train’ is loaded in memory.
@@ -180,15 +180,18 @@ def generate_features(
             + f"{pipeline_sentence}\n"
             + f"\n"
         )
+        if task =='classification':
+            next_add_information = ''
+        if task =='regression':
+            next_add_information = "Call ‘f_regression’ if it will be used in the Pipeline"
 
         if len(code) > 10:
             messages += [
                 {"role": "assistant", "content": code},
                 {
                     "role": "user",
-                    "content": f"""The pipeline {pipe} provides a performance of {performance}.
+                    "content": f"""The pipeline {pipe} provides a performance of {performance}. Make sure that along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn. {next_add_information}
         Next codeblock:
-        Make sure that along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn.
         """,
                 },
             ]
