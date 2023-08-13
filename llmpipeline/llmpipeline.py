@@ -42,7 +42,7 @@ step_3 = ('GradientBoostingClassifier', GradientBoostingClassifier(n_estimators=
                                                                 max_features=0.2))
 
 pipe = Pipeline([step_1, step_2, step_3])
-pipe.fit(X_train, y_train)
+pipe = pipe.fit(X_train, y_train)
 
 ```end
 
@@ -88,7 +88,7 @@ def generate_features(
     else:
 
         display_method = print
-    prompt = build_prompt_from_df(name_dataset, hf_token, iterative=iterative)
+    prompt = build_prompt_from_df(name_dataset, hf_token)
 
     if just_print_prompt:
         code, prompt = None, prompt
@@ -146,7 +146,7 @@ def generate_features(
             "content": prompt,
         },
     ]
-    display_method(f"*Dataset description:*\n {ds[-1]}")
+    display_method(f"*Task:*\n {name_dataset}")
 
     n_iter = iterative
     i = 0

@@ -14,6 +14,7 @@ setup(
     install_requires=[
         "openai",
         "openml",
+        "scikit-learn",
     ],
 )
 

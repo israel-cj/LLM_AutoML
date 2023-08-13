@@ -35,7 +35,7 @@ step_3 = ('GradientBoostingClassifier', GradientBoostingClassifier(n_estimators=
                                                                 max_features=0.2))
 
 pipe = Pipeline([step_1, step_2, step_3])
-pipe.fit(X_train, y_train)
+pipe = pipe.fit(X_train, y_train)
 
 ```end
 

@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 import pandas as pd
 import ast
 
-def run_llm_code(code, X_train, y_train,):
+def run_llm_code(code, X_train, y_train, pipe=None):
     """
     Executes the given code on the given dataframe and returns the resulting dataframe.
 
@@ -18,9 +18,15 @@ def run_llm_code(code, X_train, y_train,):
     pandas.DataFrame: The resulting dataframe after executing the code.
     """
     try:
-        access_scope = {"X_train": X_train, "y_train": y_train}
-        parsed = ast.parse(code)
-        pipe= exec(compile(parsed, filename="<ast>", mode="exec"), access_scope)
+
+        globals_dict = {'X_train': X_train, 'y_train': y_train}
+        output = {}
+        exec(code, globals_dict, output)
+        #output = {}
+        #exec(code, None, output)
+        # Use the resulting pipe object
+        pipe = output['pipe']
+        print(pipe)
 
     except Exception as e:
         print("Code could not be executed", e)

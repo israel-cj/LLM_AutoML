@@ -1,7 +1,7 @@
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
-from sklearn.utils.multiclass import unique_labels
+from sklearn.preprocessing import LabelEncoder
 from .run_llm_code import run_llm_code
 from .llmpipeline import generate_features
+from typing import Union
 import pandas as pd
 import numpy as np
 from typing import Optional
@@ -54,16 +54,20 @@ class LLM_pipeline():
         """
         # if y.shape[1]>1:
         #    y =
+        y_ = y.squeeze() if isinstance(y, pd.DataFrame) else y
+        self._label_encoder = LabelEncoder().fit(y_)
+        if any(isinstance(yi, str) for yi in y_):
+            # If target values are `str` we encode them or scikit-learn will complain.
+            y = self._label_encoder.transform(y_)
+
 
         self.X_ = X
         self.y_ = y
-
         self.code, prompt, messages = generate_features(
             X,
             y,
             model=self.llm_model,
             iterative=self.iterations,
-            iterative_method=self.base_classifier,
             display_method="markdown",
             n_splits=self.n_splits,
             n_repeats=self.n_repeats,
@@ -80,10 +84,31 @@ class LLM_pipeline():
         return self.pipe
 
     def predict(self, X):
-        return self.pipe.predict(X)
+        X = self._prepare_for_prediction(X)
+        return self._predict(X)
 
     def predict_log_proba(self, X):
         return self.pipe.predict_log_proba(X)
 
     def predict_proba(self, X):
         return self.pipe.predict_proba(X)
+
+    def _encode_labels(self, y):
+        self._label_encoder = LabelEncoder().fit(y)
+        return self._label_encoder.transform(y)
+
+    def _prepare_for_prediction(
+            self, X: Union[pd.DataFrame, np.ndarray]
+    ) -> pd.DataFrame:
+        if isinstance(X, np.ndarray):
+            X = self._np_to_matching_dataframe(X)
+        if self._basic_encoding_pipeline:
+            X = self._basic_encoding_pipeline.transform(X)
+        return X
+
+    def _predict(self, X: pd.DataFrame):
+        y = self.pipe.predict(X)  # type: ignore
+        # Decode the predicted labels - necessary only if ensemble is not used.
+        if y[0] not in list(self._label_encoder.classes_):
+            y = self._label_encoder.inverse_transform(y)
+        return y
