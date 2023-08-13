@@ -34,19 +34,19 @@ Each codeblock ends with "```end" and starts with "```python"
 Make sure that along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn.
 {additional_data}
 Codeblock:
-"""
+""", similar_pipelines
 
 # Each codeblock either generates {how_many} or drops bad columns (Feature selection).
 
 
 def build_prompt_from_df(name_dataset, hf_token, task):
-    prompt = get_prompt(
+    prompt, similar_pipelines = get_prompt(
         name_dataset,
         hf_token,
         task,
     )
 
-    return prompt
+    return prompt, similar_pipelines
 
 
 def generate_features(
@@ -75,7 +75,7 @@ def generate_features(
     else:
 
         display_method = print
-    prompt = build_prompt_from_df(name_dataset, hf_token, task)
+    prompt, similar_pipelines = build_prompt_from_df(name_dataset, hf_token, task)
 
     if just_print_prompt:
         code, prompt = None, prompt
@@ -190,7 +190,12 @@ def generate_features(
                 {"role": "assistant", "content": code},
                 {
                     "role": "user",
-                    "content": f"""The pipeline {pipe} provides a performance of {performance}. Make sure that along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn. {next_add_information}
+                    "content": f"""The pipeline {pipe} provided a score of {performance}.  
+                    Again, here are the similar Pipelines: 
+                    {similar_pipelines}
+                    
+                    Generate Pipelines that are diverse and not identical to previous iterations.
+                    Make sure that along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn. {next_add_information}.
         Next codeblock:
         """,
                 },
