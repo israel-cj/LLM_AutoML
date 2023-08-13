@@ -183,7 +183,7 @@ def generate_features(
         if task =='classification':
             next_add_information = ''
         if task =='regression':
-            next_add_information = "Call ‘f_regression’ if it will be used in the Pipeline"
+            next_add_information = f"Use 'SimpleImputer' since ‘Nan’ values are not allowed in {task} tasks, and call ‘f_regression’ if it will be used in the Pipeline"
 
         if len(code) > 10:
             messages += [
@@ -195,7 +195,7 @@ def generate_features(
                     {similar_pipelines}
                     
                     Generate Pipelines that are diverse and not identical to previous iterations.
-                    Make sure that along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn. {next_add_information}.
+                    Along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn. {next_add_information}.
         Next codeblock:
         """,
                 },

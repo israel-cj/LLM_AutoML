@@ -46,8 +46,8 @@ for task_id in tasks:
     datasetID = task.dataset_id
     benchmark_ids.append(datasetID)
 
-openai.api_key = ""
-hf_token = ''
+openai.api_key = "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"
+hf_token = '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'
 name_dataset = 'Moneyball'
 type_task = 'regression'
 

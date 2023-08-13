@@ -87,30 +87,33 @@ class LLM_pipeline():
             task = self.task,
         )
 
-        list_pipelines_valid = [obj for obj in list_codeblocks if isinstance(obj, Pipeline)]
+        get_pipelines = []
+        for code_pipe in list_codeblocks:
+            try:
+                this_pipe = run_llm_code(code_pipe, X, y)
+            except Exception as e:
+                print(f"Exception: {e}")
+                this_pipe = None
+            if isinstance(this_pipe, Pipeline):
+                get_pipelines.append(this_pipe)
 
-        if len(list_pipelines_valid) == 0:
+        if len(get_pipelines)==0:
             raise ValueError("Not pipeline could be created")
 
-        if len(list_pipelines_valid)==1:
-            self.pipe = run_llm_code(
-                self.code,
-                X,
-                y,
-            )
+        if len(get_pipelines)==1:
+            self.pipe = get_pipelines[0]
         # Create an ensemble if we have more than 1 useful pipeline
-        if len(list_pipelines_valid)>1 and self.make_ensemble:
+        if len(get_pipelines)>1 and self.make_ensemble:
             print('An Ensemble model will be created')
             import sklearn.ensemble
-            list_pipelines = []
-            for code_pipe in list_pipelines_valid:
-                this_pipe = run_llm_code(code_pipe, X, y)
-                list_pipelines.append(this_pipe)
-
             # Create the ensemble
-            self.pipe = sklearn.ensemble.VotingClassifier(estimators=[('pipeline_{}'.format(i), pipeline) for i, pipeline in enumerate(list_pipelines)], voting='hard')
+            self.pipe = sklearn.ensemble.VotingClassifier(estimators=[('pipeline_{}'.format(i), pipeline) for i, pipeline in enumerate(get_pipelines)], voting='hard')
             # Fit the ensemble to the training data
             self.pipe.fit(X, y)
+
+        # Ensemble not allowed but more than one model in the list, the last model generated will be send it
+        if len(get_pipelines) > 1 and self.make_ensemble==False:
+            self.pipe = get_pipelines[-1]
 
         # Return the model
         return self.pipe
