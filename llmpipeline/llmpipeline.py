@@ -9,10 +9,12 @@ from .similarity import TransferedPipelines
 def get_prompt(
         name_dataset, hf_token, task, **kwargs
 ):
+    additional_data = ''
     if task == 'classification':
         metric_prompt = 'Log loss'
     else:
         metric_prompt = 'Mean Squared Error'
+        additional_data = f"Make sure to always use “SimpleImputer” since ‘Nan’ values are not allowed in {task}"
     similar_pipelines = TransferedPipelines(hf_token=hf_token, name_dataset=name_dataset, task=task, number_of_pipelines=5)
     return f"""
 The dataframe split in ‘X_train’ and ‘y_train’ is loaded in memory.
@@ -30,6 +32,7 @@ Code formatting for each pipeline created:
 Each codeblock generates exactly one useful pipeline. Which will be evaluated with "{metric_prompt}". 
 Each codeblock ends with "```end" and starts with "```python"
 Make sure that along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn.
+{additional_data}
 Codeblock:
 """
 

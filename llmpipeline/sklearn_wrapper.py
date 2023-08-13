@@ -63,13 +63,13 @@ class LLM_pipeline():
                 # If target values are `str` we encode them or scikit-learn will complain.
                 y = self._label_encoder.transform(y_)
 
-        if self.task == 'regression':
-            # Identify rows with missing values in X
-            missing_rows = np.isnan(X).any(axis=1)
-
-            # Remove rows with missing values from X and y
-            X = X[~missing_rows]
-            y = y[~missing_rows]
+        # if self.task == 'regression':
+        #     # Identify rows with missing values in X
+        #     missing_rows = np.isnan(X).any(axis=1)
+        #
+        #     # Remove rows with missing values from X and y
+        #     X = X[~missing_rows]
+        #     y = y[~missing_rows]
 
         self.X_ = X
         self.y_ = y
@@ -91,7 +91,7 @@ class LLM_pipeline():
             y,
         )
         # Create an ensemble if we have more than 1 useful pipeline
-        if len(list_codeblocks)>1 and self.make_ensemble:
+        if len(list_codeblocks)>1 and self.make_ensemble and self.task=="classification":
             print('An Ensemble model will be created')
             import sklearn.ensemble
             list_pipelines = []
