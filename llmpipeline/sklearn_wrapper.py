@@ -30,6 +30,7 @@ class LLM_pipeline():
             name_dataset = None,
             hf_token = None,
             make_ensemble = True,
+            task="classification"
     ) -> None:
         self.llm_model = llm_model
         self.iterations = iterations
@@ -40,6 +41,7 @@ class LLM_pipeline():
         self.hf_token = hf_token
         self.pipe = None
         self.make_ensemble = make_ensemble
+        self.task = task
     def fit(
             self, X, y, disable_caafe=False
     ):
@@ -54,14 +56,12 @@ class LLM_pipeline():
             The training data target values.
 
         """
-        # if y.shape[1]>1:
-        #    y =
-        y_ = y.squeeze() if isinstance(y, pd.DataFrame) else y
-        self._label_encoder = LabelEncoder().fit(y_)
-        if any(isinstance(yi, str) for yi in y_):
-            # If target values are `str` we encode them or scikit-learn will complain.
-            y = self._label_encoder.transform(y_)
-
+        if self.task == "classification":
+            y_ = y.squeeze() if isinstance(y, pd.DataFrame) else y
+            self._label_encoder = LabelEncoder().fit(y_)
+            if any(isinstance(yi, str) for yi in y_):
+                # If target values are `str` we encode them or scikit-learn will complain.
+                y = self._label_encoder.transform(y_)
 
         self.X_ = X
         self.y_ = y
@@ -74,7 +74,8 @@ class LLM_pipeline():
             n_splits=self.n_splits,
             n_repeats=self.n_repeats,
             name_dataset = self.name_dataset,
-            hf_token = self.hf_token
+            hf_token = self.hf_token,
+            task = self.task,
         )
         self.pipe = run_llm_code(
             self.code,
@@ -99,8 +100,11 @@ class LLM_pipeline():
         return self.pipe
 
     def predict(self, X):
-        X = self._prepare_for_prediction(X)
-        return self._predict(X)
+        if self.task == "classification":
+            X = self._prepare_for_prediction(X)
+            return self._predict(X)
+        else:
+            return self.pipe.predict(X)  # type: ignore
 
     def predict_log_proba(self, X):
         return self.pipe.predict_log_proba(X)

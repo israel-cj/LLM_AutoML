@@ -7,12 +7,16 @@ from .similarity import TransferedPipelines
 
 
 def get_prompt(
-        name_dataset, hf_token, **kwargs
+        name_dataset, hf_token, task, **kwargs
 ):
-    similar_pipelines = TransferedPipelines(hf_token=hf_token, name_dataset=name_dataset, number_of_pipelines=5)
+    if task == 'classification':
+        metric_prompt = 'Log loss'
+    else:
+        metric_prompt = 'Mean Squared Error'
+    similar_pipelines = TransferedPipelines(hf_token=hf_token, name_dataset=name_dataset, task=task, number_of_pipelines=5)
     return f"""
 The dataframe split in ‘X_train’ and ‘y_train’ is loaded in memory.
-This code was written by an expert data scientist working to create a suitable pipeline (preprocessing techniques and estimator) given such a dataset. It is a snippet of code that import the packages necessary to create a ‘sklearn’ pipeline together with a description. This code takes inspiration from previous similar pipelines and their respective ‘Log loss’ which worked for related ‘X_train’ and ‘y_train’. Those examples contain the word ‘Pipeline’ which refers to the preprocessing steps (optional) and estimators necessary, the word ‘data’ refers to ‘X_train’ and ‘y_train’ used during training, and finally ‘Log loss’ represent the performance of the model (the closes to 0 the better):
+This code was written by an expert data scientist working to create a suitable pipeline (preprocessing techniques and estimator) given such a dataset, the task is {task}. It is a snippet of code that import the packages necessary to create a ‘sklearn’ pipeline together with a description. This code takes inspiration from previous similar pipelines and their respective ‘{metric_prompt}’ which worked for related ‘X_train’ and ‘y_train’. Those examples contain the word ‘Pipeline’ which refers to the preprocessing steps (optional) and estimators necessary, the word ‘data’ refers to ‘X_train’ and ‘y_train’ used during training, and finally ‘{metric_prompt}’ represent the performance of the model (the closes to 0 the better):
 “
 {similar_pipelines}
 “
@@ -23,7 +27,7 @@ Code formatting for each pipeline created:
 (Some sklearn import packages and code using 'sklearn' to create a pipeline object 'pipe'. In addition call its respective 'fit' function to feed the model with 'X_train' and 'y_train')
 ```end
 
-Each codeblock generates exactly one useful pipeline. Which will be evaluated with Log loss. 
+Each codeblock generates exactly one useful pipeline. Which will be evaluated with "{metric_prompt}". 
 Each codeblock ends with "```end" and starts with "```python"
 Make sure that along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn.
 Codeblock:
@@ -32,10 +36,11 @@ Codeblock:
 # Each codeblock either generates {how_many} or drops bad columns (Feature selection).
 
 
-def build_prompt_from_df(name_dataset, hf_token):
+def build_prompt_from_df(name_dataset, hf_token, task):
     prompt = get_prompt(
         name_dataset,
         hf_token,
+        task,
     )
 
     return prompt
@@ -53,6 +58,7 @@ def generate_features(
         n_repeats=2,
         name_dataset = None,
         hf_token=None,
+        task='classification'
 ):
     list_codeblocks = []
     def format_for_display(code):
@@ -66,7 +72,7 @@ def generate_features(
     else:
 
         display_method = print
-    prompt = build_prompt_from_df(name_dataset, hf_token)
+    prompt = build_prompt_from_df(name_dataset, hf_token, task)
 
     if just_print_prompt:
         code, prompt = None, prompt
@@ -109,6 +115,7 @@ def generate_features(
             old_stdout = sys.stdout
             sys.stdout = devnull
             try:
+                # Works for both, regression and classification, I guess
                 performance = pipe.score(X_test, y_test)
             finally:
                 sys.stdout = old_stdout
@@ -172,7 +179,7 @@ def generate_features(
                 {"role": "assistant", "content": code},
                 {
                     "role": "user",
-                    "content": f"""The pipeline {pipe} provides a accuracy performance of {performance}.
+                    "content": f"""The pipeline {pipe} provides a performance of {performance}.
         Next codeblock:
         """,
                 },
