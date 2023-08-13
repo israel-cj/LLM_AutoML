@@ -188,6 +188,7 @@ def generate_features(
                     "role": "user",
                     "content": f"""The pipeline {pipe} provides a performance of {performance}.
         Next codeblock:
+        Make sure that along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn.
         """,
                 },
             ]
