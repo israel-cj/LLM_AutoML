@@ -3,7 +3,7 @@ import numpy as np
 import openai
 from sklearn.model_selection import train_test_split
 from .run_llm_code import run_llm_code
-from data.similarity import TransferedPipelines
+from .similarity import TransferedPipelines
 
 
 def get_prompt(
