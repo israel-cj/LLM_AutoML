@@ -123,6 +123,7 @@ class LLM_pipeline():
             # Index best pipeline:
             index_best_pipeline = list_performance.index(max(list_performance))
             # Return the one with the best performance
+            print('Returning the best pipeline')
             self.pipe = get_pipelines[index_best_pipeline]
 
         # Return the model
