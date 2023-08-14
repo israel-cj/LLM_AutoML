@@ -1,5 +1,6 @@
 from sklearn.preprocessing import LabelEncoder
 from sklearn.pipeline import Pipeline
+from sklearn.model_selection import train_test_split
 from .run_llm_code import run_llm_code
 from .llmpipeline import generate_features
 from typing import Union
@@ -55,6 +56,14 @@ class LLM_pipeline():
             The training data target values.
 
         """
+        def get_score_pipeline(pipeline):
+            if self.task == "classification":
+                X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=0)
+            else:
+                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+            performance = pipeline.score(X_train, y_train)
+            return performance
+
         if self.task == "classification":
             y_ = y.squeeze() if isinstance(y, pd.DataFrame) else y
             self._label_encoder = LabelEncoder().fit(y_)
@@ -110,7 +119,11 @@ class LLM_pipeline():
 
         # Ensemble not allowed but more than one model in the list, the last model generated will be send it
         if len(get_pipelines) > 1 and self.make_ensemble==False:
-            self.pipe = get_pipelines[-1]
+            list_performance = [get_score_pipeline(final_pipeline) for final_pipeline in get_pipelines]
+            # Index best pipeline:
+            index_best_pipeline = list_performance.index(max(list_performance))
+            # Return the one with the best performance
+            self.pipe = get_pipelines[index_best_pipeline]
 
         # Return the model
         return self.pipe
