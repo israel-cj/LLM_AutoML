@@ -141,7 +141,7 @@ def generate_features(
             "content": prompt,
         },
     ]
-    display_method(f"*Task:*\n {name_dataset}")
+    display_method(f"*Dataset with specific description, task:*\n {task}")
 
     n_iter = iterative
     i = 0
