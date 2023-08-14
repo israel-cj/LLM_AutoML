@@ -28,8 +28,7 @@ class LLM_pipeline():
             llm_model: str = "gpt-3.5-turbo",
             n_splits: int = 10,
             n_repeats: int = 2,
-            name_dataset = None,
-            hf_token = None,
+            description_dataset = None,
             make_ensemble = True,
             task="classification"
     ) -> None:
@@ -38,8 +37,7 @@ class LLM_pipeline():
         self.optimization_metric = optimization_metric
         self.n_splits = n_splits
         self.n_repeats = n_repeats
-        self.name_dataset = name_dataset
-        self.hf_token = hf_token
+        self.description_dataset = description_dataset
         self.pipe = None
         self.make_ensemble = make_ensemble
         self.task = task
@@ -82,8 +80,7 @@ class LLM_pipeline():
             display_method="markdown",
             n_splits=self.n_splits,
             n_repeats=self.n_repeats,
-            name_dataset = self.name_dataset,
-            hf_token = self.hf_token,
+            description_dataset = self.description_dataset,
             task = self.task,
         )
 

@@ -3,11 +3,10 @@ import numpy as np
 import openai
 from sklearn.model_selection import train_test_split
 from .run_llm_code import run_llm_code
-from .similarity import TransferedPipelines
-
+from .similarity_description_based import TransferedPipelines
 
 def get_prompt(
-        name_dataset, hf_token, task, **kwargs
+        description_dataset=None, task='classification', **kwargs
 ):
     additional_data = ''
     if task == 'classification':
@@ -15,7 +14,7 @@ def get_prompt(
     else:
         metric_prompt = 'Mean Squared Error'
         additional_data = f"Make sure to always use 'SimpleImputer' since ‘Nan’ values are not allowed in {task}, and call ‘f_regression’ if it will be used in the Pipeline"
-    similar_pipelines = TransferedPipelines(hf_token=hf_token, name_dataset=name_dataset, task=task, number_of_pipelines=5)
+    similar_pipelines = TransferedPipelines(description_dataset=description_dataset, task=task, number_of_pipelines=5)
     return f"""
 The dataframe split in ‘X_train’ and ‘y_train’ is loaded in memory.
 This code was written by an expert data scientist working to create a suitable pipeline (preprocessing techniques and estimator) given such a dataset, the task is {task}. It is a snippet of code that import the packages necessary to create a ‘sklearn’ pipeline together with a description. This code takes inspiration from previous similar pipelines and their respective ‘{metric_prompt}’ which worked for related ‘X_train’ and ‘y_train’. Those examples contain the word ‘Pipeline’ which refers to the preprocessing steps (optional) and estimators necessary, the word ‘data’ refers to ‘X_train’ and ‘y_train’ used during training, and finally ‘{metric_prompt}’ represent the performance of the model (the closes to 0 the better):
@@ -39,11 +38,12 @@ Codeblock:
 # Each codeblock either generates {how_many} or drops bad columns (Feature selection).
 
 
-def build_prompt_from_df(name_dataset, hf_token, task):
+def build_prompt_from_df(description_dataset=None,
+        task='classification'):
+
     prompt, similar_pipelines = get_prompt(
-        name_dataset,
-        hf_token,
-        task,
+        description_dataset=description_dataset,
+        task=task,
     )
 
     return prompt, similar_pipelines
@@ -59,8 +59,7 @@ def generate_features(
         display_method="markdown",
         n_splits=10,
         n_repeats=2,
-        name_dataset = None,
-        hf_token=None,
+        description_dataset = None,
         task='classification'
 ):
     list_codeblocks = []
@@ -75,7 +74,10 @@ def generate_features(
     else:
 
         display_method = print
-    prompt, similar_pipelines = build_prompt_from_df(name_dataset, hf_token, task)
+    prompt, similar_pipelines = build_prompt_from_df(
+        description_dataset=description_dataset,
+        task=task,
+    )
 
     if just_print_prompt:
         code, prompt = None, prompt
@@ -194,7 +196,7 @@ def generate_features(
                     Again, here are the similar Pipelines: 
                     {similar_pipelines}
                     
-                    Generate Pipelines that are diverse and not identical to previous iterations.
+                    Generate Pipelines that are diverse and not identical to previous iterations. 
                     Along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn. {next_add_information}.
         Next codeblock:
         """,

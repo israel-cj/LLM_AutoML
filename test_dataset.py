@@ -15,8 +15,6 @@ import openml
 #     benchmark_ids.append(datasetID)
 #
 # openai.api_key = ""
-# hf_token = ""
-# name_dataset = "wilt"
 # type_task = "classification"
 # # dataset = openml.datasets.get_dataset(41078) # iris
 # dataset = openml.datasets.get_dataset(benchmark_ids[5]) # 5='wilt'
@@ -26,7 +24,7 @@ import openml
 #
 # X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=0)
 
-# generate_pipe = LLM_pipeline(llm_model="gpt-3.5-turbo", iterations=2, name_dataset=name_dataset, hf_token=hf_token, task=type_task)
+# generate_pipe = LLM_pipeline(llm_model="gpt-3.5-turbo", iterations=2, description_dataset=description_dataset, task=type_task)
 #
 # # The iterations happen here:
 # clf = generate_pipe.fit(X_train, y_train)
@@ -47,11 +45,10 @@ for task_id in tasks:
     benchmark_ids.append(datasetID)
 
 openai.api_key = ""
-hf_token = ''
-name_dataset = 'Moneyball'
 type_task = 'regression'
 
 dataset = openml.datasets.get_dataset(benchmark_ids[0]) # 0 is equal to moneyball
+description_dataset = dataset.description
 X, y, categorical_indicator, attribute_names = dataset.get_data(
     dataset_format="array", target=dataset.default_target_attribute
 )
@@ -59,7 +56,7 @@ X, y, categorical_indicator, attribute_names = dataset.get_data(
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
 ### Setup and Run LLM pipeline - This will be billed to your OpenAI Account!
-generate_pipe = LLM_pipeline(llm_model="gpt-3.5-turbo", iterations=2, name_dataset=name_dataset, hf_token=hf_token, task=type_task)
+generate_pipe = LLM_pipeline(llm_model="gpt-3.5-turbo", iterations=2, description_dataset=description_dataset, task=type_task)
 
 # The iterations happen here:
 automl = generate_pipe.fit(X_train, y_train)

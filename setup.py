@@ -15,6 +15,7 @@ setup(
         "openai",
         "openml",
         "scikit-learn",
+        "sentence-transformers",
     ],
 )
 
