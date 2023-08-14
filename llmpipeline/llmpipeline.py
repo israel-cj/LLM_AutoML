@@ -105,7 +105,6 @@ def generate_features(
             X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
         try:
-            """We are here"""
             pipe = run_llm_code(
                 code,
                 X_train,

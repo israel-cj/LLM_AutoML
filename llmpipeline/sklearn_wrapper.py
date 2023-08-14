@@ -113,7 +113,7 @@ class LLM_pipeline():
             self.pipe = get_pipelines[-1]
 
         # Return the model
-        return self.pipe
+        return self
 
     def predict(self, X):
         if self.task == "classification":
