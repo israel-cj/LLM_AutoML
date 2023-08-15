@@ -57,6 +57,7 @@ class LLM_pipeline():
 
         """
         def get_score_pipeline(pipeline):
+            # The split is only to make it faster
             if self.task == "classification":
                 X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=0)
             else:
