@@ -1,10 +1,10 @@
 import requests
 import random
 from sentence_transformers import SentenceTransformer, util
-from data_automlbenchmark import data_automl
-from data_automlbenchmark_regression import data_automl_regression
-from description_classification import dictionary_classification
-from description_regression import dictionary_regression
+from .data_automlbenchmark import data_automl
+from .data_automlbenchmark_regression import data_automl_regression
+from .description_classification import dictionary_classification
+from .description_regression import dictionary_regression
 
 def TransferedPipelines(description_dataset=None, number_of_pipelines=5, task='classification'):
     # Load the JSON data which contains the pipelines from the AutoMLBenchmark

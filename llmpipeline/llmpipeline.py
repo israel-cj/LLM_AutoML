@@ -3,7 +3,7 @@ import numpy as np
 import openai
 from sklearn.model_selection import train_test_split
 from .run_llm_code import run_llm_code
-from .similarity_description_based import TransferedPipelines
+from .similarity_description_based_mix import TransferedPipelines
 
 def get_prompt(
         description_dataset=None, task='classification', number_of_pipelines= 3, **kwargs
