@@ -6,34 +6,39 @@ from .run_llm_code import run_llm_code
 from .similarity_description_based import TransferedPipelines
 
 def get_prompt(
-        description_dataset=None, task='classification', **kwargs
+        description_dataset=None, task='classification', number_of_pipelines= 3, **kwargs
 ):
-    additional_data = ''
     if task == 'classification':
         metric_prompt = 'Log loss'
     else:
         metric_prompt = 'Mean Squared Error'
-        additional_data = f"Make sure to always use 'SimpleImputer' since ‘Nan’ values are not allowed in {task}, and call ‘f_regression’ if it will be used in the Pipeline"
     similar_pipelines = TransferedPipelines(description_dataset=description_dataset, task=task, number_of_pipelines=5)
     return f"""
 The dataframe split in ‘X_train’ and ‘y_train’ is loaded in memory.
-This code was written by an expert data scientist working to create a suitable pipeline (preprocessing techniques and estimator) given such a dataset, the task is {task}. It is a snippet of code that import the packages necessary to create a ‘sklearn’ pipeline together with a description. This code takes inspiration from previous similar pipelines and their respective ‘{metric_prompt}’ which worked for related ‘X_train’ and ‘y_train’. Those examples contain the word ‘Pipeline’ which refers to the preprocessing steps (optional) and estimators necessary, the word ‘data’ refers to ‘X_train’ and ‘y_train’ used during training, and finally ‘{metric_prompt}’ represent the performance of the model (the closes to 0 the better):
+
+This code was written by an expert data scientist working to create a suitable 'Multi-Layer Stack Ensembling model', the task is {task}. This is done by creating {number_of_pipelines} not identical pipelines, a pipeline is the set of preprocessing techniques (if required) and estimator.
+It is a snippet of code that import the packages necessary to create a ‘sklearn’ Multi-Layer Stack Ensembling model based on a list of pipelines.
+To generate the list of pipelines with {number_of_pipelines} independent pipelines this codeblock takes inspiration from previous similar pipelines and their respective ‘{metric_prompt}’ which worked for related ‘X_train’ and ‘y_train’. 
+The previous similar pipelines contain the word ‘Pipeline’ which refers to the preprocessing steps (optional) and estimators necessary, the word ‘data’ refers to ‘X_train’ and ‘y_train’ used during training, and finally ‘{metric_prompt}’ represent the performance of the model (the closest to 0 the better). The similar pipelines are:
 “
 {similar_pipelines}
 “
 
-Code formatting for each pipeline created:
+Code formatting for the Multi-Layer Stack Ensembling model created:
 ```python
-# Type of pipeline and description why this pipeline could work 
-(Some sklearn import packages and code using 'sklearn' to create a pipeline object 'pipe'. In addition call its respective 'fit' function to feed the model with 'X_train' and 'y_train')
+# Description of why this set of pipelines could work in the Multi-Layer Stack Ensembling
+(
+Some sklearn import packages and code using 'sklearn' to create {number_of_pipelines} pipelines with names 'pipe_1', 'pipe_2', ... 'pipe_{number_of_pipelines}'. Insert each pipe_X in a try-exception block, so if the code does not run for this one, still the next pipeline has a chance.
+All pipelines running without errors should be storage in a list called 'list_pipelines' containing [pipe_1, ..., pipe_{number_of_pipelines}].
+Then import the packages to create a Multi-Layer Stack Ensembling model by using 'list_pipelines', this model should be called 'stacking_model'
+Finally, import the necessary packages to create the 'stacking_model', call its respective 'fit' function to feed it with 'X_train' and 'y_train'.
+)
 ```end
 
-Each codeblock generates exactly one useful pipeline. Which will be evaluated with "{metric_prompt}". 
-Each codeblock ends with "```end" and starts with "```python"
-Make sure that along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn.
-{additional_data}
+This codeblock will be evaluated with "{metric_prompt}". 
+This codeblock ends with "```end" and starts with "```python"
 Codeblock:
-""", similar_pipelines
+"""
 
 # Each codeblock either generates {how_many} or drops bad columns (Feature selection).
 
@@ -41,12 +46,12 @@ Codeblock:
 def build_prompt_from_df(description_dataset=None,
         task='classification'):
 
-    prompt, similar_pipelines = get_prompt(
+    prompt = get_prompt(
         description_dataset=description_dataset,
         task=task,
     )
 
-    return prompt, similar_pipelines
+    return prompt
 
 
 def generate_features(
@@ -62,7 +67,6 @@ def generate_features(
         description_dataset = None,
         task='classification'
 ):
-    list_codeblocks = []
     def format_for_display(code):
         code = code.replace("```python", "").replace("```", "").replace("<end>", "")
         return code
@@ -74,7 +78,7 @@ def generate_features(
     else:
 
         display_method = print
-    prompt, similar_pipelines = build_prompt_from_df(
+    prompt = build_prompt_from_df(
         description_dataset=description_dataset,
         task=task,
     )
@@ -115,25 +119,12 @@ def generate_features(
             display_method(f"Error in code execution. {type(e)} {e}")
             display_method(f"```python\n{format_for_display(code)}\n```\n")
             return e, None, None
-
-        from contextlib import contextmanager
-        import sys, os
-
-        with open(os.devnull, "w") as devnull:
-            old_stdout = sys.stdout
-            sys.stdout = devnull
-            try:
-                # Works for both, regression and classification, I guess
-                performance = pipe.score(X_test, y_test)
-            finally:
-                sys.stdout = old_stdout
-
-        return None, performance, pipe
+        return None, pipe
 
     messages = [
         {
             "role": "system",
-            "content": "You are an expert datascientist assistant creating a Pipeline for a dataset X_train, y_train. You answer only by generating code. Answer as concisely as possible.",
+            "content": "You are an expert datascientist assistant creating a 'Multi-Layer Stack Ensembling model' for a dataset X_train, y_train. You answer only by generating code. Answer as concisely as possible.",
         },
         {
             "role": "user",
@@ -142,64 +133,26 @@ def generate_features(
     ]
     display_method(f"*Dataset with specific description, task:*\n {task}")
 
-    n_iter = iterative
-    i = 0
-    while i < n_iter:
-        try:
-            code = generate_code(messages)
-            list_codeblocks.append(code)
-        except Exception as e:
-            display_method("Error in LLM API." + str(e))
-            continue
-        i = i + 1
-        e, performance, pipe = execute_and_evaluate_code_block(code)
-        if e is not None:
-            messages += [
-                {"role": "assistant", "content": code},
-                {
-                    "role": "user",
-                    "content": f"""Code execution failed with error: {type(e)} {e}.\n Code: ```python{code}```\n Generate next pipeline (fixing error?):
-                                ```python
-                                """,
-                },
-            ]
-            continue
+    try:
+        code = generate_code(messages)
+    except Exception as e:
+        display_method("Error in LLM API." + str(e))
+        pass
+    e, pipe = execute_and_evaluate_code_block(code)
 
-        if isinstance(performance, float):
-            valid_pipeline = True
-            pipeline_sentence = f"The code was executed and generated a Pipeline ´pipe´ with score {performance}"
-        else:
-            valid_pipeline = False
-            pipeline_sentence = "The last code did not generate a valid ´pipe´, it was discarded."
+    if e is None:
+        valid_pipeline = True
+        pipeline_sentence = f"The code was executed and generated a Pipeline {pipe}"
+    else:
+        valid_pipeline = False
+        pipeline_sentence = "The last code did not generate a valid ´pipe´, it was discarded."
 
-        display_method(
-            "\n"
-            + f"*Iteration {i}*\n"
-            + f"*Valid pipeline: {str(valid_pipeline)}*\n"
-            + f"```python\n{format_for_display(code)}\n```\n"
-            + f"Performance {performance} \n"
-            + f"{pipeline_sentence}\n"
-            + f"\n"
-        )
-        if task =='classification':
-            next_add_information = ''
-        if task =='regression':
-            next_add_information = f"Use 'SimpleImputer' since ‘Nan’ values are not allowed in {task} tasks, and call ‘f_regression’ if it will be used in the Pipeline"
+    display_method(
+        "\n"
+        + f"*Valid pipeline: {str(valid_pipeline)}*\n"
+        + f"```python\n{format_for_display(code)}\n```\n"
+        + f"{pipeline_sentence}\n"
+        + f"\n"
+    )
 
-        if len(code) > 10:
-            messages += [
-                {"role": "assistant", "content": code},
-                {
-                    "role": "user",
-                    "content": f"""The pipeline {pipe} provided a score of {performance}.  
-                    Again, here are the similar Pipelines: 
-                    {similar_pipelines}
-                    
-                    Generate Pipelines that are diverse and not identical to previous iterations. 
-                    Along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn. {next_add_information}.
-        Next codeblock:
-        """,
-                },
-            ]
-
-    return code, prompt, messages, list_codeblocks
+    return code, prompt, messages

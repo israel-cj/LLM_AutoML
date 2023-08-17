@@ -25,13 +25,13 @@ def run_llm_code(code, X_train, y_train, pipe=None):
         #output = {}
         #exec(code, None, output)
         # Use the resulting pipe object
-        pipe = output['pipe']
-        print(pipe)
+        stacking_model = output['stacking_model']
+        print(stacking_model)
 
     except Exception as e:
         print("Code could not be executed", e)
         raise (e)
 
-    return pipe
+    return stacking_model
 
 

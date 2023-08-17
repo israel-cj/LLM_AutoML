@@ -82,7 +82,7 @@ class LLM_pipeline():
 
         self.X_ = X
         self.y_ = y
-        self.code, prompt, messages, list_codeblocks = generate_features(
+        self.code, prompt, messages = generate_features(
             X,
             y,
             model=self.llm_model,
@@ -94,39 +94,11 @@ class LLM_pipeline():
             task = self.task,
         )
 
-        get_pipelines = []
-        for code_pipe in list_codeblocks:
-            try:
-                this_pipe = run_llm_code(code_pipe, X, y)
-            except Exception as e:
-                print(f"Exception: {e}")
-                this_pipe = None
-            if isinstance(this_pipe, Pipeline):
-                get_pipelines.append(this_pipe)
-
-        if len(get_pipelines)==0:
-            raise ValueError("Not pipeline could be created")
-
-        if len(get_pipelines)==1:
-            self.pipe = get_pipelines[0]
-        # Create an ensemble if we have more than 1 useful pipeline
-        if len(get_pipelines)>1 and self.make_ensemble:
-            print('An Ensemble model will be created')
-            import sklearn.ensemble
-            # Create the ensemble
-            self.pipe = sklearn.ensemble.VotingClassifier(estimators=[('pipeline_{}'.format(i), pipeline) for i, pipeline in enumerate(get_pipelines)], voting='hard')
-            # Fit the ensemble to the training data
-            self.pipe.fit(X, y)
-
-        # Ensemble not allowed but more than one model in the list, the last model generated will be send it
-        if len(get_pipelines) > 1 and self.make_ensemble==False:
-            list_performance = [get_score_pipeline(final_pipeline) for final_pipeline in get_pipelines]
-            # Index best pipeline:
-            index_best_pipeline = list_performance.index(max(list_performance))
-            # Return the one with the best performance
-            print('Returning the best pipeline')
-            self.pipe = get_pipelines[index_best_pipeline]
-
+        self.pipe = run_llm_code(
+            self.code,
+            self.X,
+            self.y,
+        )
         # Return the model
         return self.pipe
 
