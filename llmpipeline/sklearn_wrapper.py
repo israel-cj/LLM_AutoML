@@ -3,6 +3,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from .run_llm_code import run_llm_code
 from .llmpipeline import generate_features
+from .llmensemble import generate_code_embedding
 from typing import Union
 import pandas as pd
 import numpy as np
@@ -111,7 +112,13 @@ class LLM_pipeline():
             self.pipe = get_pipelines[0]
         # Create an ensemble if we have more than 1 useful pipeline
         if len(get_pipelines)>1 and self.make_ensemble:
-            print('An Ensemble model will be created')
+            self.pipe = generate_code_embedding(get_pipelines,
+                                                X,
+                                                y,
+                                                model=self.llm_model,
+                                                display_method="markdown",
+                                                task=self.task,
+                                                )
             import sklearn.ensemble
             # Create the ensemble
             self.pipe = sklearn.ensemble.VotingClassifier(estimators=[('pipeline_{}'.format(i), pipeline) for i, pipeline in enumerate(get_pipelines)], voting='hard')

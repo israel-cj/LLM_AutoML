@@ -147,7 +147,6 @@ def generate_features(
     while i < n_iter:
         try:
             code = generate_code(messages)
-            list_codeblocks.append(code)
         except Exception as e:
             display_method("Error in LLM API." + str(e))
             continue
@@ -158,7 +157,7 @@ def generate_features(
                 {"role": "assistant", "content": code},
                 {
                     "role": "user",
-                    "content": f"""Code execution failed with error: {type(e)} {e}.\n Code: ```python{code}```\n Generate next pipeline (fixing error?):
+                    "content": f"""Code execution failed with error: {type(e)} {e}.\n Code: ```python{code}```\n. Generate next pipeline (fixing error?):
                                 ```python
                                 """,
                 },
@@ -186,7 +185,8 @@ def generate_features(
         if task =='regression':
             next_add_information = f"Use 'SimpleImputer' since ‘Nan’ values are not allowed in {task} tasks, and call ‘f_regression’ if it will be used in the Pipeline"
 
-        if len(code) > 10:
+        if e is None:
+            list_codeblocks.append(code) # We are going to run this code if it is working
             messages += [
                 {"role": "assistant", "content": code},
                 {
