@@ -196,7 +196,7 @@ def generate_features(
                     {similar_pipelines}
                     
                     Generate Pipelines that are diverse and not identical to previous iterations. 
-                    Along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn. {next_add_information}.
+                    Make sure that along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn. {next_add_information}.
         Next codeblock:
         """,
                 },
