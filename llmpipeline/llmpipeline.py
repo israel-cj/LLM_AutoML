@@ -167,7 +167,7 @@ def generate_features(
 
         if isinstance(performance, float):
             valid_pipeline = True
-            pipeline_sentence = f"The code was executed and generated a Pipeline ´pipe´ with score {performance}"
+            pipeline_sentence = f"The code was executed and generated a ´pipe´ with score {performance}"
         else:
             valid_pipeline = False
             pipeline_sentence = "The last code did not generate a valid ´pipe´, it was discarded."

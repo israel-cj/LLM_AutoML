@@ -147,7 +147,7 @@ def generate_code_embedding(
 
         if isinstance(performance, float):
             valid_model = True
-            pipeline_sentence = f"The code was executed and generated a Model ´model´ with score {performance}"
+            pipeline_sentence = f"The code was executed and generated a ´model´ with score {performance}"
         else:
             valid_model = False
             pipeline_sentence = "The last code did not generate a valid ´model´, it was discarded."

@@ -112,6 +112,7 @@ class LLM_pipeline():
             self.pipe = get_pipelines[0]
         # Create an ensemble if we have more than 1 useful pipeline
         if len(get_pipelines)>1 and self.make_ensemble:
+            print('Creating an ensemble with LLM')
             self.pipe = generate_code_embedding(get_pipelines,
                                                 X,
                                                 y,
@@ -120,6 +121,7 @@ class LLM_pipeline():
                                                 task=self.task,
                                                 )
             if self.pipe is None:
+                print('Ensemble with LLM failed, doing it manually')
                 import sklearn.ensemble
                 # Create the ensemble
                 self.pipe = sklearn.ensemble.VotingClassifier(estimators=[('pipeline_{}'.format(i), pipeline) for i, pipeline in enumerate(get_pipelines)], voting='hard')
