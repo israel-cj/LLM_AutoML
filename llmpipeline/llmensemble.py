@@ -37,7 +37,8 @@ def generate_code_embedding(
         model="gpt-3.5-turbo",
         display_method="markdown",
         task='classification',
-    just_print_prompt=False,
+        just_print_prompt=False,
+        iterations_max=3,
 ):
     list_codeblocks = []
 
@@ -122,16 +123,12 @@ def generate_code_embedding(
     iteration_counts = 0
     pipe = None # If return None, means the code could not be executed and we need to generated the code manually
     while e is not None:
-        iteration_counts+=1
-        if iteration_counts>4:
-            break
         try:
             code = generate_code(messages)
             list_codeblocks.append(code)
         except Exception as e:
             display_method("Error in LLM API." + str(e))
             continue
-        i = i + 1
         e, performance, pipe = execute_and_evaluate_code_block(code)
         if e is not None:
             messages += [
@@ -161,5 +158,8 @@ def generate_code_embedding(
             + f"{pipeline_sentence}\n"
             + f"\n"
         )
+        iteration_counts += 1
+        if iteration_counts > iterations_max:
+            break
 
     return pipe

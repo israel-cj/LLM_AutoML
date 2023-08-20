@@ -119,6 +119,7 @@ class LLM_pipeline():
                                                 model=self.llm_model,
                                                 display_method="markdown",
                                                 task=self.task,
+                                                iterations_max=3
                                                 )
             if self.pipe is None:
                 print('Ensemble with LLM failed, doing it manually')
