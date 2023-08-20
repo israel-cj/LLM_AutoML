@@ -119,11 +119,12 @@ class LLM_pipeline():
                                                 display_method="markdown",
                                                 task=self.task,
                                                 )
-            import sklearn.ensemble
-            # Create the ensemble
-            self.pipe = sklearn.ensemble.VotingClassifier(estimators=[('pipeline_{}'.format(i), pipeline) for i, pipeline in enumerate(get_pipelines)], voting='hard')
-            # Fit the ensemble to the training data
-            self.pipe.fit(X, y)
+            if self.pipe is None:
+                import sklearn.ensemble
+                # Create the ensemble
+                self.pipe = sklearn.ensemble.VotingClassifier(estimators=[('pipeline_{}'.format(i), pipeline) for i, pipeline in enumerate(get_pipelines)], voting='hard')
+                # Fit the ensemble to the training data
+                self.pipe.fit(X, y)
 
         # Ensemble not allowed but more than one model in the list, the last model generated will be send it
         if len(get_pipelines) > 1 and self.make_ensemble==False:

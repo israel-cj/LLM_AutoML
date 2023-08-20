@@ -120,6 +120,7 @@ def generate_code_embedding(
 
     e = 1
     iteration_counts = 0
+    pipe = None # If return None, means the code could not be executed and we need to generated the code manually
     while e is not None:
         iteration_counts+=1
         if iteration_counts>4:
@@ -153,6 +154,7 @@ def generate_code_embedding(
 
         display_method(
             "\n"
+            + f"*Error? : {str(e)}*\n"
             + f"*Valid model: {str(valid_model)}*\n"
             + f"```python\n{format_for_display(code)}\n```\n"
             + f"Performance {performance} \n"
