@@ -13,7 +13,7 @@ def get_prompt(
         metric_prompt = 'Log loss'
     else:
         metric_prompt = 'Mean Squared Error'
-        additional_data = f"Make sure to always use 'SimpleImputer' since ‘Nan’ values are not allowed in {task}, and call ‘f_regression’ if it will be used in the Pipeline"
+        additional_data = f"If it will be used in the Pipeline, call ‘f_regression’ "
     similar_pipelines = TransferedPipelines(description_dataset=description_dataset, task=task, number_of_pipelines=5)
     return f"""
 The dataframe split in ‘X_train’ and ‘y_train’ is loaded in memory.
@@ -31,6 +31,7 @@ Code formatting for each pipeline created:
 Each codeblock generates exactly one useful pipeline. Which will be evaluated with "{metric_prompt}". 
 Each codeblock ends with "```end" and starts with "```python"
 Make sure that along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn.
+Make sure to always use 'SimpleImputer' since ‘Nan’ values are not allowed in {task}.
 {additional_data}
 Codeblock:
 """, similar_pipelines
@@ -197,6 +198,7 @@ def generate_features(
                     
                     Generate Pipelines that are diverse and not identical to previous iterations. 
                     Make sure that along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn. {next_add_information}.
+                    Make sure to always use 'SimpleImputer' since ‘Nan’ values are not allowed in {task}.
         Next codeblock:
         """,
                 },
