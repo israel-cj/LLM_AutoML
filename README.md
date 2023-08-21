@@ -6,14 +6,15 @@ There are two requirements, define if the problem is 'classification' or 'regres
 "Author",
 "Source",
 "Please cite:",
-“<Dataset name>:", <Description>
+“Dataset name:",
+"Description:",
 For more examples, please look into data/classification_description.json and data/regression_description.json, which are the names of the datasets and their description for the classification (OpenML suite 271) and regression (OpenML suite 269), respectively.
 
 https://openml.github.io/openml-python/develop/examples/30_extended/create_upload_tutorial.html
 
-
 # # Classification
-````python
+
+```python
 
 import openai
 from sklearn.metrics import accuracy_score
@@ -39,9 +40,11 @@ y_pred = clf.predict(X_test)
 acc = accuracy_score(y_pred, y_test)
 print(f'LLM Pipeline accuracy {acc}')
 
-```` 
+```
+
 # # Regression
-````python
+
+```python
 import openai
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
@@ -66,4 +69,4 @@ automl = LLM_pipeline(llm_model="gpt-3.5-turbo", iterations=2, description_datas
 y_pred = automl.predict(X_test)
 print("LLM Pipeline MSE:", mean_squared_error(y_test, y_pred))
 
-````
+```
