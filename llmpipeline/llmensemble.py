@@ -1,5 +1,7 @@
 
 import openai
+import csv
+import datetime
 from sklearn.model_selection import train_test_split
 from .run_llm_code import run_llm_code_ensemble
 
@@ -43,6 +45,7 @@ def generate_code_embedding(
         task='classification',
         just_print_prompt=False,
         iterations_max=2,
+        identifier='',
 ):
     def format_for_display(code):
         code = code.replace("```python", "").replace("```", "").replace("<end>", "")
@@ -150,6 +153,11 @@ def generate_code_embedding(
             + f"{pipeline_sentence}\n"
             + f"\n"
         )
+        if e is None:
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            with open(f'pipelines_{identifier}.csv', 'a', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow([timestamp, code, str(performance)])
         if e is not None:
             messages += [
                 {"role": "assistant", "content": code},

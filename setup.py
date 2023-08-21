@@ -17,6 +17,7 @@ setup(
         "scikit-learn",
         "sentence-transformers",
         "mlxtend",
+        "stopit",
     ],
 )
 

@@ -5,11 +5,10 @@ from .run_llm_code import run_llm_code
 from .llmpipeline import generate_features
 from .llmensemble import generate_code_embedding
 from typing import Union
-import pandas as pd
 import numpy as np
-from typing import Optional
 import pandas as pd
-
+import stopit
+import uuid
 
 class LLM_pipeline():
     """
@@ -32,7 +31,8 @@ class LLM_pipeline():
             n_repeats: int = 2,
             description_dataset = None,
             make_ensemble = True,
-            task="classification"
+            task="classification",
+            max_total_time = 180,
     ) -> None:
         self.llm_model = llm_model
         self.iterations = iterations
@@ -43,6 +43,8 @@ class LLM_pipeline():
         self.pipe = None
         self.make_ensemble = make_ensemble
         self.task = task
+        self.timeout = max_total_time
+        self.uid = str(uuid.uuid4())
     def fit(
             self, X, y, disable_caafe=False
     ):
@@ -57,6 +59,9 @@ class LLM_pipeline():
             The training data target values.
 
         """
+        global list_codeblocks # To retrieve at least one result if the timeout is reached
+        # Generate a unique UUID
+        print('uid', self.uid)
         def get_score_pipeline(pipeline):
             # The split is only to make it faster
             if self.task == "classification":
@@ -82,20 +87,26 @@ class LLM_pipeline():
         #     y = y[~missing_rows]
         self.X_ = X
         self.y_ = y
-        self.code, prompt, messages, list_codeblocks = generate_features(
-            X,
-            y,
-            model=self.llm_model,
-            iterative=self.iterations,
-            display_method="markdown",
-            n_splits=self.n_splits,
-            n_repeats=self.n_repeats,
-            description_dataset = self.description_dataset,
-            task = self.task,
-        )
+        try:
+            with stopit.ThreadingTimeout(self.timeout):
+                self.code, prompt, messages, list_codeblocks_generated = generate_features(
+                    X,
+                    y,
+                    model=self.llm_model,
+                    iterative=self.iterations,
+                    display_method="markdown",
+                    n_splits=self.n_splits,
+                    n_repeats=self.n_repeats,
+                    description_dataset = self.description_dataset,
+                    task = self.task,
+                    identifier=self.uid,
+                )
+        except stopit.TimeoutException:
+            list_codeblocks_generated = list_codeblocks # If there is at least one result, we will retrieve it
+            print("Timeout expired")
 
         get_pipelines = []
-        for code_pipe in list_codeblocks:
+        for code_pipe in list_codeblocks_generated:
             try:
                 this_pipe = run_llm_code(code_pipe, X, y)
             except Exception as e:
@@ -118,7 +129,8 @@ class LLM_pipeline():
                                                 model=self.llm_model,
                                                 display_method="markdown",
                                                 task=self.task,
-                                                iterations_max=2
+                                                iterations_max=2,
+                                                identifier=self.uid,
                                                 )
             if self.pipe is None:
                 print('Ensemble with LLM failed, doing it manually')

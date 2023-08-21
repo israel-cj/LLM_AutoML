@@ -1,10 +1,12 @@
 import datetime
-import uuid
 import csv
 import openai
 from sklearn.model_selection import train_test_split
 from .run_llm_code import run_llm_code
 from .similarity_description_based_mix import TransferedPipelines
+
+global list_codeblocks
+list_codeblocks = []
 
 def get_prompt(
         description_dataset=None, task='classification', **kwargs
@@ -62,12 +64,9 @@ def generate_features(
         n_splits=10,
         n_repeats=2,
         description_dataset = None,
-        task='classification'
+        task='classification',
+        identifier = ""
 ):
-    # Generate a unique UUID
-    uid = str(uuid.uuid4())
-    print('uid', uid)
-    list_codeblocks = []
     def format_for_display(code):
         code = code.replace("```python", "").replace("```", "").replace("<end>", "")
         return code
@@ -197,13 +196,10 @@ def generate_features(
             list_codeblocks.append(code) # We are going to run this code if it is working
             # Get the current timestamp
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            # Convert the pipeline object to a string
-            pipeline_str = str(pipe)
-            pipeline_performance_Str = str(performance)
             # Write the data to a CSV file
-            with open(f'pipelines_{uid}.csv', 'a', newline='') as csvfile:
+            with open(f'pipelines_{identifier}.csv', 'a', newline='') as csvfile:
                 writer = csv.writer(csvfile)
-                writer.writerow([timestamp, code, pipeline_performance_Str])
+                writer.writerow([timestamp, code, str(performance)])
             messages += [
                 {"role": "assistant", "content": code},
                 {

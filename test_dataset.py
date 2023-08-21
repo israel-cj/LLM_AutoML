@@ -20,7 +20,7 @@ for h in range(len(benchmark_ids)):
     try:
         start_time = time.time()
         print('New task')
-        openai.api_key = ""
+        openai.api_key = " "
         type_task = "classification"
         # dataset = openml.datasets.get_dataset(41078) # iris
         dataset = openml.datasets.get_dataset(benchmark_ids[h]) # 5='wilt'
@@ -32,7 +32,7 @@ for h in range(len(benchmark_ids)):
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=0)
 
-        generate_pipe = LLM_pipeline(llm_model="gpt-3.5-turbo", iterations=3, description_dataset=description_dataset, task=type_task)
+        generate_pipe = LLM_pipeline(llm_model="gpt-3.5-turbo", iterations=3, description_dataset=description_dataset, task=type_task, max_total_time=3600)
 
         # The iterations happen here:
         clf = generate_pipe.fit(X_train, y_train)
@@ -79,7 +79,7 @@ for h in range(len(benchmark_ids)):
 # X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 #
 # ### Setup and Run LLM pipeline - This will be billed to your OpenAI Account!
-# generate_pipe = LLM_pipeline(llm_model="gpt-3.5-turbo", iterations=3, description_dataset=description_dataset, task=type_task)
+# generate_pipe = LLM_pipeline(llm_model="gpt-3.5-turbo", iterations=3, description_dataset=description_dataset, task=type_task, max_total_time=3600)
 #
 # # The iterations happen here:
 # automl = generate_pipe.fit(X_train, y_train)
