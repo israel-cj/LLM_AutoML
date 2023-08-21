@@ -20,7 +20,7 @@ for h in range(len(benchmark_ids)):
     try:
         start_time = time.time()
         print('New task')
-        openai.api_key = " "
+        openai.api_key = ""
         type_task = "classification"
         # dataset = openml.datasets.get_dataset(41078) # iris
         dataset = openml.datasets.get_dataset(benchmark_ids[h]) # 5='wilt'
