@@ -38,7 +38,7 @@ def TransferedPipelines(description_dataset=None, number_of_pipelines=5, task='c
     # Retrieve the pipelines of the task name with the most similar description
     similar_task_name = doc_score_pairs[0][0]
     print('The most similar dataset name is: ', similar_task_name)
-    list_other_similar_datasets = [doc_score_pairs[i+1][0] for i in range(number_of_pipelines)]
+    list_other_similar_datasets = [doc_score_pairs[i+1][0] for i in range(number_of_pipelines)] # Not including the most similar
     # let's use 2 (arbirtray) elements for each one of the 'number_of_pipelines' not first most similar pipelines
     most_similar_dataset =  []
     for similar_datasets in list_other_similar_datasets:

@@ -203,7 +203,7 @@ def generate_features(
             # Write the data to a CSV file
             with open(f'pipelines_{uid}.csv', 'a', newline='') as csvfile:
                 writer = csv.writer(csvfile)
-                writer.writerow([timestamp, pipeline_str, pipeline_performance_Str])
+                writer.writerow([timestamp, code, pipeline_performance_Str])
             messages += [
                 {"role": "assistant", "content": code},
                 {

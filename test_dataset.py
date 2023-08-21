@@ -20,7 +20,7 @@ for h in range(len(benchmark_ids)):
     try:
         start_time = time.time()
         print('New task')
-        openai.api_key = ""
+        openai.api_key = " "
         type_task = "classification"
         # dataset = openml.datasets.get_dataset(41078) # iris
         dataset = openml.datasets.get_dataset(benchmark_ids[h]) # 5='wilt'
@@ -44,17 +44,16 @@ for h in range(len(benchmark_ids)):
         end_time = time.time()
         duration = end_time - start_time
         print(f"Process duration: {duration} seconds")
+        print('Saving results time-task')
         with open('results.csv', 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow([dataset.name, duration, acc])
-        time.sleep(70) # Because we have the free API key
     except Exception as e:
         print("Code could not be executed", e)
         with open('results.csv', 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow([dataset.name, None, e])
         continue
-    print('Saving results time-task')
 
 
 
