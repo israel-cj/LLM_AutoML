@@ -3,8 +3,12 @@ import openai
 from sklearn.model_selection import train_test_split
 from .run_llm_code import run_llm_code_ensemble
 
-
 def get_prompt(task='classification'):
+    if task == 'classification':
+        additional_information = "Do not use EnsembleSelectionClassifier instead use EnsembleVoteClassifier, consider that EnsembleVoteClassifier accept only the next parameters: clfs, voting, weights, verbose, use_clones, fit_base_estimators"
+    else:
+        additional_information = ""
+
     return f"""
 The dataframe split in ‘X_train’, ‘y_train’ and a list called ‘list_pipelines’ are loaded in memory.
 
@@ -12,7 +16,7 @@ This code was written by an expert data scientist working to create a suitable �
 
 Code formatting the Multi-Layer Stack Ensembling:
 ```python
-(Some packages imported and code necessary to create a Multi-Layer Stack Ensembling Model, which must be called ‘model’.
+(Some packages imported and code necessary to create a Multi-Layer Stack Ensembling Model, which must be called ‘model’. {additional_information}
 This model will be creating reusing all of its base layer model types “list_pipelines” as stackers. Those stacker models take as input not only the predictions of the models at the previous layer, but also the original data features themselves (input vectors are data features concatenated with lowerlayer model predictions).
 The second and final stacking layer applies ensemble selection.
 In addition, from 'model' call its respective 'fit' function to feed the model with 'X_train' and 'y_train')
@@ -38,10 +42,8 @@ def generate_code_embedding(
         display_method="markdown",
         task='classification',
         just_print_prompt=False,
-        iterations_max=3,
+        iterations_max=2,
 ):
-    list_codeblocks = []
-
     def format_for_display(code):
         code = code.replace("```python", "").replace("```", "").replace("<end>", "")
         return code
@@ -76,9 +78,9 @@ def generate_code_embedding(
 
     def execute_and_evaluate_code_block(code):
         if task == "classification":
-            X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=0)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, stratify=y, random_state=0)
         else:
-            X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, random_state=0)
 
         try:
             pipe = run_llm_code_ensemble(
@@ -123,25 +125,15 @@ def generate_code_embedding(
     iteration_counts = 0
     pipe = None # If return None, means the code could not be executed and we need to generated the code manually
     while e is not None:
+        iteration_counts += 1
+        if iteration_counts > iterations_max:
+            break
         try:
             code = generate_code(messages)
-            list_codeblocks.append(code)
         except Exception as e:
             display_method("Error in LLM API." + str(e))
             continue
         e, performance, pipe = execute_and_evaluate_code_block(code)
-        if e is not None:
-            messages += [
-                {"role": "assistant", "content": code},
-                {
-                    "role": "user",
-                    "content": f"""Code execution failed with error: {type(e)} {e}.\n Code: ```python{code}```\n. Do it again and fix error.
-                                ```python
-                                """,
-                },
-            ]
-            continue
-
         if isinstance(performance, float):
             valid_model = True
             pipeline_sentence = f"The code was executed and generated a ´model´ with score {performance}"
@@ -158,8 +150,16 @@ def generate_code_embedding(
             + f"{pipeline_sentence}\n"
             + f"\n"
         )
-        iteration_counts += 1
-        if iteration_counts > iterations_max:
-            break
+        if e is not None:
+            messages += [
+                {"role": "assistant", "content": code},
+                {
+                    "role": "user",
+                    "content": f"""Code execution failed with error: {type(e)} {e}.\n Code: ```python{code}```\n. Do it again and fix error.
+                                ```python
+                                """,
+                },
+            ]
+            continue
 
     return pipe

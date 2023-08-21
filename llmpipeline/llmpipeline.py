@@ -1,5 +1,6 @@
-import copy
-import numpy as np
+import datetime
+import uuid
+import csv
 import openai
 from sklearn.model_selection import train_test_split
 from .run_llm_code import run_llm_code
@@ -63,6 +64,9 @@ def generate_features(
         description_dataset = None,
         task='classification'
 ):
+    # Generate a unique UUID
+    uid = str(uuid.uuid4())
+    print('uid', uid)
     list_codeblocks = []
     def format_for_display(code):
         code = code.replace("```python", "").replace("```", "").replace("<end>", "")
@@ -101,9 +105,9 @@ def generate_features(
 
     def execute_and_evaluate_code_block(code):
         if task == "classification":
-            X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=0)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, stratify=y, random_state=0)
         else:
-            X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, random_state=0)
 
         try:
             pipe = run_llm_code(
@@ -153,17 +157,6 @@ def generate_features(
             continue
         i = i + 1
         e, performance, pipe = execute_and_evaluate_code_block(code)
-        if e is not None:
-            messages += [
-                {"role": "assistant", "content": code},
-                {
-                    "role": "user",
-                    "content": f"""Code execution failed with error: {type(e)} {e}.\n Code: ```python{code}```\n. Generate next pipeline (fixing error?):
-                                ```python
-                                """,
-                },
-            ]
-            continue
 
         if isinstance(performance, float):
             valid_pipeline = True
@@ -181,6 +174,20 @@ def generate_features(
             + f"{pipeline_sentence}\n"
             + f"\n"
         )
+
+        if e is not None:
+            messages += [
+                {"role": "assistant", "content": code},
+                {
+                    "role": "user",
+                    "content": f"""Code execution failed with error: {type(e)} {e}.\n Code: ```python{code}```\n. Generate next pipeline (fixing error?):
+                                ```python
+                                """,
+                },
+            ]
+            continue
+
+
         if task =='classification':
             next_add_information = ''
         if task =='regression':
@@ -188,6 +195,15 @@ def generate_features(
 
         if e is None:
             list_codeblocks.append(code) # We are going to run this code if it is working
+            # Get the current timestamp
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # Convert the pipeline object to a string
+            pipeline_str = str(pipe)
+            pipeline_performance_Str = str(performance)
+            # Write the data to a CSV file
+            with open(f'pipelines_{uid}.csv', 'a', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow([timestamp, pipeline_str, pipeline_performance_Str])
             messages += [
                 {"role": "assistant", "content": code},
                 {

@@ -80,7 +80,6 @@ class LLM_pipeline():
         #     # Remove rows with missing values from X and y
         #     X = X[~missing_rows]
         #     y = y[~missing_rows]
-
         self.X_ = X
         self.y_ = y
         self.code, prompt, messages, list_codeblocks = generate_features(
@@ -119,15 +118,23 @@ class LLM_pipeline():
                                                 model=self.llm_model,
                                                 display_method="markdown",
                                                 task=self.task,
-                                                iterations_max=3
+                                                iterations_max=2
                                                 )
             if self.pipe is None:
                 print('Ensemble with LLM failed, doing it manually')
-                import sklearn.ensemble
-                # Create the ensemble
-                self.pipe = sklearn.ensemble.VotingClassifier(estimators=[('pipeline_{}'.format(i), pipeline) for i, pipeline in enumerate(get_pipelines)], voting='hard')
-                # Fit the ensemble to the training data
+
+                from sklearn.ensemble import VotingClassifier
+                from mlxtend.classifier import EnsembleVoteClassifier
+                # Create the Multi-Layer Stack Ensembling model
+                self.pipe = EnsembleVoteClassifier(clfs=get_pipelines, voting='soft')
+                # Fit the model with training data
                 self.pipe.fit(X, y)
+
+                # import sklearn.ensemble
+                # # Create the ensemble
+                # self.pipe = sklearn.ensemble.VotingClassifier(estimators=[('pipeline_{}'.format(i), pipeline) for i, pipeline in enumerate(get_pipelines)], voting='hard')
+                # # Fit the ensemble to the training data
+                # self.pipe.fit(X, y)
 
         # Ensemble not allowed but more than one model in the list, the last model generated will be send it
         if len(get_pipelines) > 1 and self.make_ensemble==False:
@@ -142,6 +149,7 @@ class LLM_pipeline():
         return self.pipe
 
     def predict(self, X):
+        X = X.to_numpy()
         if self.task == "classification":
             X = self._prepare_for_prediction(X)
             return self._predict(X)
@@ -152,6 +160,7 @@ class LLM_pipeline():
         return self.pipe.predict_log_proba(X)
 
     def predict_proba(self, X):
+        X = X.to_numpy()
         return self.pipe.predict_proba(X)
 
     def _encode_labels(self, y):
@@ -161,6 +170,7 @@ class LLM_pipeline():
     def _prepare_for_prediction(
             self, X: Union[pd.DataFrame, np.ndarray]
     ) -> pd.DataFrame:
+        X = X.to_numpy()
         if isinstance(X, np.ndarray):
             X = self._np_to_matching_dataframe(X)
         if self._basic_encoding_pipeline:

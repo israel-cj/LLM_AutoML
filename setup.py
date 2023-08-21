@@ -16,6 +16,7 @@ setup(
         "openml",
         "scikit-learn",
         "sentence-transformers",
+        "mlxtend",
     ],
 )
 
