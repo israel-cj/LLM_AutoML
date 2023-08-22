@@ -104,7 +104,6 @@ class LLM_pipeline():
         except stopit.TimeoutException:
             list_codeblocks_generated = list_codeblocks # If there is at least one result, we will retrieve it
             print("Timeout expired")
-
         get_pipelines = []
         for code_pipe in list_codeblocks_generated:
             try:
@@ -134,19 +133,19 @@ class LLM_pipeline():
                                                 )
             if self.pipe is None:
                 print('Ensemble with LLM failed, doing it manually')
-
-                from sklearn.ensemble import VotingClassifier
-                from mlxtend.classifier import EnsembleVoteClassifier
-                # Create the Multi-Layer Stack Ensembling model
-                self.pipe = EnsembleVoteClassifier(clfs=get_pipelines, voting='soft')
-                # Fit the model with training data
-                self.pipe.fit(X, y)
-
-                # import sklearn.ensemble
-                # # Create the ensemble
-                # self.pipe = sklearn.ensemble.VotingClassifier(estimators=[('pipeline_{}'.format(i), pipeline) for i, pipeline in enumerate(get_pipelines)], voting='hard')
-                # # Fit the ensemble to the training data
-                # self.pipe.fit(X, y)
+                if self.task == "classification":
+                    from sklearn.ensemble import VotingClassifier
+                    from mlxtend.classifier import EnsembleVoteClassifier
+                    # Create the Multi-Layer Stack Ensembling model
+                    self.pipe = EnsembleVoteClassifier(clfs=get_pipelines, voting='soft')
+                    # Fit the model with training data
+                    self.pipe.fit(X, y)
+                else:
+                    import sklearn.ensemble
+                    # Create the ensemble
+                    self.pipe = sklearn.ensemble.VotingClassifier(estimators=[('pipeline_{}'.format(i), pipeline) for i, pipeline in enumerate(get_pipelines)], voting='hard')
+                    # Fit the ensemble to the training data
+                    self.pipe.fit(X, y)
 
         # Ensemble not allowed but more than one model in the list, the last model generated will be send it
         if len(get_pipelines) > 1 and self.make_ensemble==False:
@@ -161,7 +160,6 @@ class LLM_pipeline():
         return self.pipe
 
     def predict(self, X):
-        X = X.to_numpy()
         if self.task == "classification":
             X = self._prepare_for_prediction(X)
             return self._predict(X)
@@ -172,7 +170,6 @@ class LLM_pipeline():
         return self.pipe.predict_log_proba(X)
 
     def predict_proba(self, X):
-        X = X.to_numpy()
         return self.pipe.predict_proba(X)
 
     def _encode_labels(self, y):
@@ -182,7 +179,6 @@ class LLM_pipeline():
     def _prepare_for_prediction(
             self, X: Union[pd.DataFrame, np.ndarray]
     ) -> pd.DataFrame:
-        X = X.to_numpy()
         if isinstance(X, np.ndarray):
             X = self._np_to_matching_dataframe(X)
         if self._basic_encoding_pipeline:

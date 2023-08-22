@@ -175,6 +175,11 @@ def generate_features(
         )
 
         if e is not None:
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # Write the data to a CSV file
+            with open(f'pipelines_{identifier}.csv', 'a', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow([timestamp, code, e])
             messages += [
                 {"role": "assistant", "content": code},
                 {

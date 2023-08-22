@@ -39,7 +39,7 @@ X, y, categorical_indicator, attribute_names = dataset.get_data(
 X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=0)
 
 ### Setup and Run LLM pipeline - This will be billed to your OpenAI Account!
-clf = LLM_pipeline(llm_model="gpt-3.5-turbo", iterations=3, description_dataset=description_dataset, make_ensemble=True).fit(X_train, y_train)
+clf = LLM_pipeline(llm_model="gpt-3.5-turbo", iterations=3, description_dataset=description_dataset, make_ensemble=True, max_total_time=3600).fit(X_train, y_train)
 
 # This process is done only once
 y_pred = clf.predict(X_test)
@@ -69,7 +69,7 @@ X, y, categorical_indicator, attribute_names = dataset.get_data(
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
 ### Setup and Run LLM pipeline - This will be billed to your OpenAI Account!
-automl = LLM_pipeline(llm_model="gpt-3.5-turbo", iterations=2, description_dataset=description_dataset, task=type_task).fit(X_train, y_train)
+automl = LLM_pipeline(llm_model="gpt-3.5-turbo", iterations=2, description_dataset=description_dataset, task=type_task, max_total_time=3600).fit(X_train, y_train)
 
 # This process is done only once
 y_pred = automl.predict(X_test)
