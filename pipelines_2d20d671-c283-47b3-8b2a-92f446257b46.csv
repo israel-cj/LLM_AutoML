@@ -1,0 +1,44 @@
+2023-08-22 16:31:04,"
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+pipe = Pipeline([
+    ('scaler', StandardScaler()),
+    ('classifier', LogisticRegression(C=20.0, dual=False, penalty='l2', solver='lbfgs'))
+])
+
+pipe.fit(X_train, y_train)
+",0.5497005988023952
+2023-08-22 16:31:08,"from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.kernel_approximation import RBFSampler
+
+pipe = Pipeline([
+    ('sampler', RBFSampler(gamma=0.4)),
+    ('classifier', ExtraTreesClassifier(bootstrap=False, criterion='gini', max_features=0.7, min_samples_leaf=4, min_samples_split=10, n_estimators=100))
+])
+
+pipe.fit(X_train, y_train)",0.5880239520958084
+2023-08-22 16:31:10,"from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.naive_bayes import GaussianNB
+from sklearn.kernel_approximation import RBFSampler
+
+pipe = Pipeline([
+    ('sampler', RBFSampler(gamma=0.2)),
+    ('classifier', GaussianNB())
+])
+
+pipe.fit(X_train, y_train)",0.4419161676646707
+2023-08-22 16:31:14,"
+from mlxtend.classifier import EnsembleVoteClassifier
+
+# Create the Multi-Layer Stack Ensembling model
+model = EnsembleVoteClassifier(clfs=list_pipelines, voting='soft', use_clones=False)
+
+# Fit the model with training data
+model.fit(X_train, y_train)
+
+",0.5137724550898204

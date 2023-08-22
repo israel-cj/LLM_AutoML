@@ -18,6 +18,7 @@ setup(
         "sentence-transformers",
         "mlxtend",
         "stopit",
+        "ipython",
     ],
 )
 

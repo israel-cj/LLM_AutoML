@@ -77,6 +77,7 @@ class LLM_pipeline():
             if any(isinstance(yi, str) for yi in y_):
                 # If target values are `str` we encode them or scikit-learn will complain.
                 y = self._label_encoder.transform(y_)
+                self._decoding = True
 
         # if self.task == 'regression':
         #     # Identify rows with missing values in X
@@ -131,6 +132,7 @@ class LLM_pipeline():
                                                 iterations_max=2,
                                                 identifier=self.uid,
                                                 )
+            self.pipe.fit(X, y)
             if self.pipe is None:
                 print('Ensemble with LLM failed, doing it manually')
                 if self.task == "classification":
@@ -157,12 +159,15 @@ class LLM_pipeline():
             self.pipe = get_pipelines[index_best_pipeline]
 
         # Return the model
-        return self.pipe
+        # return self.pipe
 
     def predict(self, X):
         if self.task == "classification":
-            X = self._prepare_for_prediction(X)
-            return self._predict(X)
+            y = self.pipe.predict(X)  # type: ignore
+            # Decode the predicted labels - necessary only if ensemble is not used.
+            if y[0] not in list(self._label_encoder.classes_):
+                y = self._label_encoder.inverse_transform(y)
+            return y
         else:
             return self.pipe.predict(X)  # type: ignore
 
@@ -172,22 +177,8 @@ class LLM_pipeline():
     def predict_proba(self, X):
         return self.pipe.predict_proba(X)
 
-    def _encode_labels(self, y):
-        self._label_encoder = LabelEncoder().fit(y)
-        return self._label_encoder.transform(y)
 
-    def _prepare_for_prediction(
-            self, X: Union[pd.DataFrame, np.ndarray]
-    ) -> pd.DataFrame:
-        if isinstance(X, np.ndarray):
-            X = self._np_to_matching_dataframe(X)
-        if self._basic_encoding_pipeline:
-            X = self._basic_encoding_pipeline.transform(X)
-        return X
 
-    def _predict(self, X: pd.DataFrame):
-        y = self.pipe.predict(X)  # type: ignore
-        # Decode the predicted labels - necessary only if ensemble is not used.
-        if y[0] not in list(self._label_encoder.classes_):
-            y = self._label_encoder.inverse_transform(y)
-        return y
+
+
+

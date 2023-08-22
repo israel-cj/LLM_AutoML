@@ -138,6 +138,7 @@ def generate_code_embedding(
             continue
         e, performance, pipe = execute_and_evaluate_code_block(code)
         if isinstance(performance, float):
+            print('The performance of the LLM ensemble is:', performance)
             valid_model = True
             pipeline_sentence = f"The code was executed and generated a ´model´ with score {performance}"
         else:

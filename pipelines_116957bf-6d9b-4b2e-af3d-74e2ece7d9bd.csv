@@ -1,0 +1,40 @@
+2023-08-22 17:04:57,"
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+pipe = Pipeline([
+    ('scaler', StandardScaler()),
+    ('classifier', LogisticRegression(C=20.0, dual=False, penalty='l2', solver='lbfgs'))
+])
+
+pipe.fit(X_train, y_train)
+",0.5497005988023952
+2023-08-22 17:05:00,"from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.kernel_approximation import RBFSampler
+
+pipe = Pipeline([
+    ('sampler', RBFSampler(gamma=0.4)),
+    ('classifier', ExtraTreesClassifier(bootstrap=False, criterion='entropy', max_features=0.6, min_samples_leaf=3, min_samples_split=10, n_estimators=100))
+])
+
+pipe.fit(X_train, y_train)",0.5688622754491018
+2023-08-22 17:05:03,"from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.naive_bayes import GaussianNB
+from sklearn.kernel_approximation import RBFSampler
+
+pipe = Pipeline([
+    ('sampler', RBFSampler(gamma=0.2)),
+    ('classifier', GaussianNB())
+])
+
+pipe.fit(X_train, y_train)",0.4155688622754491
+2023-08-22 17:05:06,"
+from mlxtend.classifier import EnsembleVoteClassifier
+
+model = EnsembleVoteClassifier(clfs=list_pipelines, voting='soft')
+model.fit(X_train, y_train)
+",0.5149700598802395

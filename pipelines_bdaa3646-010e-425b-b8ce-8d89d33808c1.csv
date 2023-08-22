@@ -1,0 +1,47 @@
+2023-08-22 16:34:44,"
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.impute import SimpleImputer
+from sklearn.linear_model import LogisticRegression
+
+pipe = Pipeline([
+    ('imputer', SimpleImputer(strategy='most_frequent')),
+    ('scaler', StandardScaler()),
+    ('classifier', LogisticRegression(C=20.0, dual=False, penalty='l2', solver='lbfgs'))
+])
+
+pipe.fit(X_train, y_train)
+",0.5497005988023952
+2023-08-22 16:34:52,"from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.impute import SimpleImputer
+from sklearn.ensemble import GradientBoostingClassifier
+
+pipe = Pipeline([
+    ('imputer', SimpleImputer(strategy='most_frequent')),
+    ('scaler', MinMaxScaler()),
+    ('classifier', GradientBoostingClassifier(learning_rate=0.1, max_depth=5, n_estimators=100))
+])
+
+pipe.fit(X_train, y_train)",0.5137724550898204
+2023-08-22 16:34:55,"from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import RobustScaler
+from sklearn.impute import SimpleImputer
+from sklearn.ensemble import RandomForestClassifier
+
+pipe = Pipeline([
+    ('imputer', SimpleImputer(strategy='most_frequent')),
+    ('scaler', RobustScaler()),
+    ('classifier', RandomForestClassifier(n_estimators=200, max_depth=10))
+])
+
+pipe.fit(X_train, y_train)",0.5820359281437125
+2023-08-22 16:35:06,"
+from mlxtend.classifier import EnsembleVoteClassifier
+
+# Create the Multi-Layer Stack Ensembling model
+model = EnsembleVoteClassifier(clfs=list_pipelines, voting='soft', use_clones=False)
+
+# Fit the model with the training data
+model.fit(X_train, y_train)
+",0.5497005988023952

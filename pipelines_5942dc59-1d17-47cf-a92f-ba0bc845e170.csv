@@ -1,0 +1,44 @@
+2023-08-22 16:30:06,"
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+# Pipeline: LogisticRegression with StandardScaler and SimpleImputer
+pipe = Pipeline([
+    ('imputer', SimpleImputer()),
+    ('scaler', StandardScaler()),
+    ('classifier', LogisticRegression())
+])
+
+# Fit the pipeline with X_train and y_train
+pipe.fit(X_train, y_train)
+",0.5616766467065868
+2023-08-22 16:30:09,"from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.ensemble import RandomForestClassifier
+
+# Pipeline: RandomForestClassifier with MinMaxScaler and SimpleImputer
+pipe = Pipeline([
+    ('imputer', SimpleImputer()),
+    ('scaler', MinMaxScaler()),
+    ('classifier', RandomForestClassifier())
+])
+
+# Fit the pipeline with X_train and y_train
+pipe.fit(X_train, y_train)",0.5604790419161677
+2023-08-22 16:30:12,"from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.svm import SVC
+
+# Pipeline: Support Vector Classifier with PolynomialFeatures and SimpleImputer
+pipe = Pipeline([
+    ('imputer', SimpleImputer()),
+    ('poly', PolynomialFeatures()),
+    ('classifier', SVC())
+])
+
+# Fit the pipeline with X_train and y_train
+pipe.fit(X_train, y_train)",0.5497005988023952

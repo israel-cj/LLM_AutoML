@@ -1,0 +1,44 @@
+2023-08-22 17:06:38,"
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+pipe = Pipeline([
+    ('imputer', SimpleImputer(strategy='mean')),
+    ('scaler', StandardScaler()),
+    ('classifier', LogisticRegression(C=20.0, dual=False, penalty='l2', solver='lbfgs'))
+])
+
+pipe.fit(X_train, y_train)
+",0.5497005988023952
+2023-08-22 17:06:42,"from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import ExtraTreesClassifier
+
+pipe = Pipeline([
+    ('imputer', SimpleImputer(strategy='mean')),
+    ('scaler', StandardScaler()),
+    ('classifier', ExtraTreesClassifier(n_estimators=100, min_samples_leaf=2, min_samples_split=15, max_features=0.5, bootstrap=False, criterion='entropy'))
+])
+
+pipe.fit(X_train, y_train)",0.6011976047904192
+2023-08-22 17:06:44,"from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import RobustScaler
+from sklearn.naive_bayes import GaussianNB
+
+pipe = Pipeline([
+    ('imputer', SimpleImputer(strategy='mean')),
+    ('scaler', RobustScaler()),
+    ('classifier', GaussianNB())
+])
+
+pipe.fit(X_train, y_train)",0.32455089820359284
+2023-08-22 17:06:46,"
+from mlxtend.classifier import EnsembleVoteClassifier
+
+model = EnsembleVoteClassifier(clfs=list_pipelines, voting='soft')
+model.fit(X_train, y_train)
+",0.49221556886227547

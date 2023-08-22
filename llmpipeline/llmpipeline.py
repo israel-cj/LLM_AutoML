@@ -199,6 +199,7 @@ def generate_features(
 
         if e is None:
             list_codeblocks.append(code) # We are going to run this code if it is working
+            print('The performance of this pipeline is: ', performance)
             # Get the current timestamp
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             # Write the data to a CSV file

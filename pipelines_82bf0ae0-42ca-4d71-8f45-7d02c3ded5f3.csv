@@ -1,0 +1,47 @@
+2023-08-22 16:43:17,"
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+pipe = Pipeline([
+    ('imputer', SimpleImputer(strategy='mean')),
+    ('scaler', StandardScaler()),
+    ('classifier', LogisticRegression(C=20.0, dual=False, penalty='l2', solver='lbfgs'))
+])
+
+pipe.fit(X_train, y_train)
+",name 'SimpleImputer' is not defined
+2023-08-22 16:43:20,"from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+pipe = Pipeline([
+    ('imputer', SimpleImputer(strategy='mean')),
+    ('scaler', StandardScaler()),
+    ('classifier', LogisticRegression(C=20.0, dual=False, penalty='l2', solver='lbfgs'))
+])
+
+pipe.fit(X_train, y_train)",0.5497005988023952
+2023-08-22 16:43:23,"from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import ExtraTreesClassifier
+
+pipe = Pipeline([
+    ('imputer', SimpleImputer(strategy='mean')),
+    ('scaler', StandardScaler()),
+    ('classifier', ExtraTreesClassifier(n_estimators=100, criterion='entropy', max_features=0.5, min_samples_leaf=2, min_samples_split=15, bootstrap=False))
+])
+
+pipe.fit(X_train, y_train)",0.5868263473053892
+2023-08-22 16:43:54,"
+from sklearn.ensemble import VotingClassifier
+from mlxtend.classifier import EnsembleVoteClassifier
+
+# Create the Multi-Layer Stack Ensembling model
+model = EnsembleVoteClassifier(clfs=list_pipelines, voting='soft')
+
+# Fit the model with the training data
+model.fit(X_train, y_train)
+",0.5748502994011976
