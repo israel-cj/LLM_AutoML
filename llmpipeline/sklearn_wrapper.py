@@ -29,7 +29,6 @@ class LLM_pipeline():
             llm_model: str = "gpt-3.5-turbo",
             n_splits: int = 10,
             n_repeats: int = 2,
-            description_dataset = None,
             make_ensemble = True,
             task="classification",
             max_total_time = 180,
@@ -39,7 +38,6 @@ class LLM_pipeline():
         self.optimization_metric = optimization_metric
         self.n_splits = n_splits
         self.n_repeats = n_repeats
-        self.description_dataset = description_dataset
         self.pipe = None
         self.make_ensemble = make_ensemble
         self.task = task
@@ -98,7 +96,6 @@ class LLM_pipeline():
                     display_method="markdown",
                     n_splits=self.n_splits,
                     n_repeats=self.n_repeats,
-                    description_dataset = self.description_dataset,
                     task = self.task,
                     identifier=self.uid,
                 )
@@ -132,22 +129,34 @@ class LLM_pipeline():
                                                 iterations_max=2,
                                                 identifier=self.uid,
                                                 )
-            self.pipe.fit(X, y)
+
             if self.pipe is None:
                 print('Ensemble with LLM failed, doing it manually')
                 if self.task == "classification":
                     from sklearn.ensemble import VotingClassifier
-                    from mlxtend.classifier import EnsembleVoteClassifier
-                    # Create the Multi-Layer Stack Ensembling model
-                    self.pipe = EnsembleVoteClassifier(clfs=get_pipelines, voting='soft')
-                    # Fit the model with training data
-                    self.pipe.fit(X, y)
+                    from sklearn.svm import SVC
+                    from mlxtend.classifier import StackingClassifier
+
+                    # Create the first layer of stackers
+                    svc_rbf = SVC(kernel='rbf', probability=True)
+                    stackers = []
+                    for pipeline in get_pipelines:
+                        stacker = StackingClassifier(classifiers=[pipeline],
+                                                     meta_classifier=svc_rbf)
+                        stackers.append(stacker)
+
+                    # Create the second layer of stackers
+                    estimators = [('stacker' + str(i), stacker) for i, stacker in enumerate(stackers)]
+                    self.pipe = VotingClassifier(estimators=estimators)
+
                 else:
-                    import sklearn.ensemble
+                    from sklearn.ensemble import VotingRegressor
                     # Create the ensemble
-                    self.pipe = sklearn.ensemble.VotingClassifier(estimators=[('pipeline_{}'.format(i), pipeline) for i, pipeline in enumerate(get_pipelines)], voting='hard')
-                    # Fit the ensemble to the training data
-                    self.pipe.fit(X, y)
+                    estimators = [('pipeline' + str(i), pipeline) for i, pipeline in enumerate(get_pipelines)]
+                    self.pipe = VotingRegressor(estimators=estimators)
+
+            # Fit the ensemble to the training data
+
 
         # Ensemble not allowed but more than one model in the list, the last model generated will be send it
         if len(get_pipelines) > 1 and self.make_ensemble==False:
@@ -158,8 +167,7 @@ class LLM_pipeline():
             print('Returning the best pipeline')
             self.pipe = get_pipelines[index_best_pipeline]
 
-        # Return the model
-        # return self.pipe
+        self.pipe.fit(X, y)
 
     def predict(self, X):
         if self.task == "classification":

@@ -6,36 +6,36 @@ from llmpipeline import LLM_pipeline
 import openml
 import time
 import csv
-
-openai.api_key = ""
-task_id = 2073
-task = openml.tasks.get_task(task_id)
-datasetID = task.dataset_id
-dataset_local = openml.datasets.get_dataset(datasetID)
-print('dataset_local name', dataset_local.name)
-description_dataset = dataset_local.description
-iterations = 3
-
-X, y, categorical_indicator, attribute_names = dataset_local.get_data(
-            dataset_format="dataframe", target=dataset_local.default_target_attribute
-        )
-type_task = "classification"
-dict_params = {
-    'task': type_task,
-    'llm_model': "gpt-3.5-turbo",
-    'iterations': 3,
-    'max_total_time': 3600,
-}
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=0)
-
-automl = LLM_pipeline(description_dataset=description_dataset, **dict_params)
-automl.fit(X_train, y_train)
-
-# This process is done only once
-y_pred = automl.predict(X_test)
-acc = accuracy_score(y_pred, y_test)
-print(f'LLM Pipeline accuracy {acc}')
+#
+# openai.api_key = ""
+# task_id = 2073
+# task = openml.tasks.get_task(task_id)
+# datasetID = task.dataset_id
+# dataset_local = openml.datasets.get_dataset(datasetID)
+# print('dataset_local name', dataset_local.name)
+# iterations = 3
+#
+# X, y, categorical_indicator, attribute_names = dataset_local.get_data(
+#             dataset_format="dataframe", target=dataset_local.default_target_attribute
+#         )
+#
+# type_task = "classification"
+# dict_params = {
+#     'task': type_task,
+#     'llm_model': "gpt-3.5-turbo",
+#     'iterations': 3,
+#     'max_total_time': 3600,
+# }
+#
+# X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=0)
+#
+# automl = LLM_pipeline(**dict_params)
+# automl.fit(X_train, y_train)
+#
+# # This process is done only once
+# y_pred = automl.predict(X_test)
+# acc = accuracy_score(y_pred, y_test)
+# print(f'LLM Pipeline accuracy {acc}')
 
 # ## Classification
 # benchmark_ids = []
@@ -46,81 +46,31 @@ print(f'LLM Pipeline accuracy {acc}')
 #     datasetID = task.dataset_id
 #     benchmark_ids.append(datasetID)
 #
-# for h in range(len(benchmark_ids)):
-#     try:
-#         start_time = time.time()
-#         print('New task')
-#         openai.api_key = "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"
-#         type_task = "classification"
-#         dict_params = {
-#             'task': type_task,
-#             'llm_model': "gpt-3.5-turbo",
-#             'iterations': 3,
-#             'max_total_time': 3600,
-#         }
-#
-#         # dataset = openml.datasets.get_dataset(41078) # iris
-#         dataset = openml.datasets.get_dataset(benchmark_ids[h]) # 5='wilt'
-#         print(dataset.name)
-#         description_dataset = dataset.description
-#         X, y, categorical_indicator, attribute_names = dataset.get_data(
-#             dataset_format="array", target=dataset.default_target_attribute
-#         )
-#
-#         X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=0)
-#
-#         generate_pipe = LLM_pipeline(description_dataset=description_dataset, **dict_params)
-#
-#         # The iterations happen here:
-#         clf = generate_pipe.fit(X_train, y_train)
-#
-#         # This process is done only once
-#         y_pred = clf.predict(X_test)
-#         acc = accuracy_score(y_pred, y_test)
-#         print(f'LLM Pipeline accuracy {acc}')
-#         end_time = time.time()
-#         duration = end_time - start_time
-#         print(f"Process duration: {duration} seconds")
-#         print('Saving results time-task')
-#         with open('results.csv', 'a', newline='') as csvfile:
-#             writer = csv.writer(csvfile)
-#             writer.writerow([dataset.name, duration, acc])
-#     except Exception as e:
-#         print("Code could not be executed", e)
-#         with open('results.csv', 'a', newline='') as csvfile:
-#             writer = csv.writer(csvfile)
-#             writer.writerow([dataset.name, None, e])
-#         continue
-#
-#
 
-# #### Regression
-#
-# benchmark_ids = []
-# suite = openml.study.get_suite(269) # Regression
-# tasks = suite.tasks
-# for task_id in tasks:
-#     task = openml.tasks.get_task(task_id)
-#     datasetID = task.dataset_id
-#     benchmark_ids.append(datasetID)
-#
-# openai.api_key = ""
-# type_task = 'regression'
-#
-# dataset = openml.datasets.get_dataset(benchmark_ids[0]) # 0 is equal to moneyball
-# description_dataset = dataset.description
-# X, y, categorical_indicator, attribute_names = dataset.get_data(
-#     dataset_format="array", target=dataset.default_target_attribute
-# )
-#
-# X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-#
-# ### Setup and Run LLM pipeline - This will be billed to your OpenAI Account!
-# generate_pipe = LLM_pipeline(llm_model="gpt-3.5-turbo", iterations=3, description_dataset=description_dataset, task=type_task, max_total_time=3600)
-#
-# # The iterations happen here:
-# automl = generate_pipe.fit(X_train, y_train)
-#
-# # This process is done only once
-# predictions = automl.predict(X_test)
-# print("LLM Pipeline MSE:", mean_squared_error(y_test, predictions))
+#### Regression
+benchmark_ids = []
+suite = openml.study.get_suite(269) # Regression
+tasks = suite.tasks
+for task_id in tasks:
+    task = openml.tasks.get_task(task_id)
+    datasetID = task.dataset_id
+    benchmark_ids.append(datasetID)
+
+openai.api_key = ""
+type_task = 'regression'
+dataset = openml.datasets.get_dataset(benchmark_ids[0]) # 0 is equal to moneyball
+X, y, categorical_indicator, attribute_names = dataset.get_data(
+    dataset_format="dataset", target=dataset.default_target_attribute
+)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+### Setup and Run LLM pipeline - This will be billed to your OpenAI Account!
+automl = LLM_pipeline(llm_model="gpt-3.5-turbo", iterations=4, task=type_task, max_total_time=3600)
+
+# The iterations happen here:
+automl.fit(X_train, y_train)
+
+# This process is done only once
+predictions = automl.predict(X_test)
+print("LLM Pipeline MSE:", mean_squared_error(y_test, predictions))

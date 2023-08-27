@@ -2,6 +2,7 @@
 import openai
 import csv
 import datetime
+import time
 from sklearn.model_selection import train_test_split
 from .run_llm_code import run_llm_code_ensemble
 
@@ -92,23 +93,13 @@ def generate_code_embedding(
                 y_train,
                 list_pipelines
             )
+            # Works for both, regression and classification, I guess
+            performance = pipe.score(X_test, y_test)
         except Exception as e:
             pipe = None
             display_method(f"Error in code execution. {type(e)} {e}")
             display_method(f"```python\n{format_for_display(code)}\n```\n")
             return e, None, None
-
-        from contextlib import contextmanager
-        import sys, os
-
-        with open(os.devnull, "w") as devnull:
-            old_stdout = sys.stdout
-            sys.stdout = devnull
-            try:
-                # Works for both, regression and classification, I guess
-                performance = pipe.score(X_test, y_test)
-            finally:
-                sys.stdout = old_stdout
 
         return None, performance, pipe
 
@@ -135,6 +126,7 @@ def generate_code_embedding(
             code = generate_code(messages)
         except Exception as e:
             display_method("Error in LLM API." + str(e))
+            time.sleep(60) # Wait 1 minute before next request
             continue
         e, performance, pipe = execute_and_evaluate_code_block(code)
         if isinstance(performance, float):
@@ -160,6 +152,10 @@ def generate_code_embedding(
                 writer = csv.writer(csvfile)
                 writer.writerow([timestamp, code, str(performance)])
         if e is not None:
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            with open(f'pipelines_{identifier}.csv', 'a', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow([timestamp, code, e])
             messages += [
                 {"role": "assistant", "content": code},
                 {

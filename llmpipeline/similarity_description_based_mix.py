@@ -42,7 +42,7 @@ def TransferedPipelines(description_dataset=None, number_of_pipelines=5, task='c
     # let's use 2 (arbirtray) elements for each one of the 'number_of_pipelines' not first most similar pipelines
     most_similar_dataset =  []
     for similar_datasets in list_other_similar_datasets:
-        this_similar = automl_benchmark_data[similar_datasets][:2]
+        this_similar = automl_benchmark_data[similar_datasets][:1]
         most_similar_dataset+=this_similar
 
     return '\n'.join(most_similar_dataset)
