@@ -34,7 +34,7 @@ automl = LLM_pipeline(
 automl.fit(X_train, y_train)
 
 # This process is done only once
-y_pred = clf.predict(X_test)
+y_pred = automl.predict(X_test)
 acc = accuracy_score(y_pred, y_test)
 print(f'LLM Pipeline accuracy {acc}')
 
