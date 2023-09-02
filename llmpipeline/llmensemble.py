@@ -8,7 +8,7 @@ from .run_llm_code import run_llm_code_ensemble
 
 def get_prompt(task='classification'):
     if task == 'classification':
-        additional_information = "Do not use EnsembleSelectionClassifier instead use EnsembleVoteClassifier, consider that EnsembleVoteClassifier accept only the next parameters: clfs, voting, weights, verbose, use_clones, fit_base_estimators, and 'predict_proba' is not available when voting='hard'"
+        additional_information = "Do not use EnsembleSelectionClassifier instead use EnsembleVoteClassifier, consider that EnsembleVoteClassifier accept only the next parameters: clfs, voting, weights, verbose, use_clones, fit_base_estimators, consider the restriction that 'voting' must always be 'soft' (voting='soft')."
     else:
         additional_information = ""
 

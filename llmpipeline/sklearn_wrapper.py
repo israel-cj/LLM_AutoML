@@ -148,7 +148,7 @@ class LLM_pipeline():
 
                         # Create the second layer of stackers
                         estimators = [('stacker' + str(i), stacker) for i, stacker in enumerate(stackers)]
-                        self.pipe = VotingClassifier(estimators=estimators)
+                        self.pipe = VotingClassifier(estimators=estimators, voting='soft')
 
                     else:
                         from sklearn.ensemble import VotingRegressor
