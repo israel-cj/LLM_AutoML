@@ -2,7 +2,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from .run_llm_code import run_llm_code
-from .llmpipeline import generate_features
+from .llmpipeline import generate_features, list_pipelines
 from .llmensemble import generate_code_embedding
 from typing import Union
 import numpy as np
@@ -57,7 +57,7 @@ class LLM_pipeline():
             The training data target values.
 
         """
-        global list_codeblocks # To retrieve at least one result if the timeout is reached
+        # global list_pipelines # To retrieve at least one result if the timeout is reached
         # Generate a unique UUID
         print('uid', self.uid)
         def get_score_pipeline(pipeline):
@@ -99,75 +99,81 @@ class LLM_pipeline():
                     task = self.task,
                     identifier=self.uid,
                 )
+            if len(list_pipelines)>0:
+                self.pipe = list_pipelines[-1] # We get at least 1 pipeline
+                self.pipe.fit(X, y)
+
+            get_pipelines = []
+            for code_pipe in list_codeblocks_generated:
+                try:
+                    this_pipe = run_llm_code(code_pipe, X, y)
+                except Exception as e:
+                    print(f"Exception: {e}")
+                    this_pipe = None
+                if isinstance(this_pipe, Pipeline):
+                    get_pipelines.append(this_pipe)
+
+            if len(get_pipelines) == 0:
+                raise ValueError("Not pipeline could be created")
+
+            if len(get_pipelines) == 1:
+                self.pipe = get_pipelines[0]
+            # Create an ensemble if we have more than 1 useful pipeline
+            if len(get_pipelines) > 1 and self.make_ensemble:
+                print('Creating an ensemble with LLM')
+                self.pipe = generate_code_embedding(get_pipelines,
+                                                    X,
+                                                    y,
+                                                    model=self.llm_model,
+                                                    display_method="markdown",
+                                                    task=self.task,
+                                                    iterations_max=2,
+                                                    identifier=self.uid,
+                                                    )
+
+                if self.pipe is None:
+                    print('Ensemble with LLM failed, doing it manually')
+                    if self.task == "classification":
+                        from sklearn.ensemble import VotingClassifier
+                        from sklearn.svm import SVC
+                        from mlxtend.classifier import StackingClassifier
+
+                        # Create the first layer of stackers
+                        svc_rbf = SVC(kernel='rbf', probability=True)
+                        stackers = []
+                        for pipeline in get_pipelines:
+                            stacker = StackingClassifier(classifiers=[pipeline],
+                                                         meta_classifier=svc_rbf)
+                            stackers.append(stacker)
+
+                        # Create the second layer of stackers
+                        estimators = [('stacker' + str(i), stacker) for i, stacker in enumerate(stackers)]
+                        self.pipe = VotingClassifier(estimators=estimators)
+
+                    else:
+                        from sklearn.ensemble import VotingRegressor
+                        # Create the ensemble
+                        estimators = [('pipeline' + str(i), pipeline) for i, pipeline in enumerate(get_pipelines)]
+                        self.pipe = VotingRegressor(estimators=estimators)
+
+                # Fit the ensemble to the training data
+
+            # Ensemble not allowed but more than one model in the list, the last model generated will be send it
+            if len(get_pipelines) > 1 and self.make_ensemble == False:
+                list_performance = [get_score_pipeline(final_pipeline) for final_pipeline in get_pipelines]
+                # Index best pipeline:
+                index_best_pipeline = list_performance.index(max(list_performance))
+                # Return the one with the best performance
+                print('Returning the best pipeline')
+                self.pipe = get_pipelines[index_best_pipeline]
+
+            self.pipe.fit(X, y)
+
         except stopit.TimeoutException:
-            list_codeblocks_generated = list_codeblocks # If there is at least one result, we will retrieve it
+            if self.pipe is None and len(list_pipelines)>0:
+                self.pipe = list_pipelines[-1]
+                self.pipe.fit(X, y)
             print("Timeout expired")
-        get_pipelines = []
-        for code_pipe in list_codeblocks_generated:
-            try:
-                this_pipe = run_llm_code(code_pipe, X, y)
-            except Exception as e:
-                print(f"Exception: {e}")
-                this_pipe = None
-            if isinstance(this_pipe, Pipeline):
-                get_pipelines.append(this_pipe)
-
-        if len(get_pipelines)==0:
-            raise ValueError("Not pipeline could be created")
-
-        if len(get_pipelines)==1:
-            self.pipe = get_pipelines[0]
-        # Create an ensemble if we have more than 1 useful pipeline
-        if len(get_pipelines)>1 and self.make_ensemble:
-            print('Creating an ensemble with LLM')
-            self.pipe = generate_code_embedding(get_pipelines,
-                                                X,
-                                                y,
-                                                model=self.llm_model,
-                                                display_method="markdown",
-                                                task=self.task,
-                                                iterations_max=2,
-                                                identifier=self.uid,
-                                                )
-
-            if self.pipe is None:
-                print('Ensemble with LLM failed, doing it manually')
-                if self.task == "classification":
-                    from sklearn.ensemble import VotingClassifier
-                    from sklearn.svm import SVC
-                    from mlxtend.classifier import StackingClassifier
-
-                    # Create the first layer of stackers
-                    svc_rbf = SVC(kernel='rbf', probability=True)
-                    stackers = []
-                    for pipeline in get_pipelines:
-                        stacker = StackingClassifier(classifiers=[pipeline],
-                                                     meta_classifier=svc_rbf)
-                        stackers.append(stacker)
-
-                    # Create the second layer of stackers
-                    estimators = [('stacker' + str(i), stacker) for i, stacker in enumerate(stackers)]
-                    self.pipe = VotingClassifier(estimators=estimators)
-
-                else:
-                    from sklearn.ensemble import VotingRegressor
-                    # Create the ensemble
-                    estimators = [('pipeline' + str(i), pipeline) for i, pipeline in enumerate(get_pipelines)]
-                    self.pipe = VotingRegressor(estimators=estimators)
-
-            # Fit the ensemble to the training data
-
-
-        # Ensemble not allowed but more than one model in the list, the last model generated will be send it
-        if len(get_pipelines) > 1 and self.make_ensemble==False:
-            list_performance = [get_score_pipeline(final_pipeline) for final_pipeline in get_pipelines]
-            # Index best pipeline:
-            index_best_pipeline = list_performance.index(max(list_performance))
-            # Return the one with the best performance
-            print('Returning the best pipeline')
-            self.pipe = get_pipelines[index_best_pipeline]
-
-        self.pipe.fit(X, y)
 
     def predict(self, X):
         if self.task == "classification":

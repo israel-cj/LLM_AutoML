@@ -8,7 +8,7 @@ from .run_llm_code import run_llm_code_ensemble
 
 def get_prompt(task='classification'):
     if task == 'classification':
-        additional_information = "Do not use EnsembleSelectionClassifier instead use EnsembleVoteClassifier, consider that EnsembleVoteClassifier accept only the next parameters: clfs, voting, weights, verbose, use_clones, fit_base_estimators"
+        additional_information = "Do not use EnsembleSelectionClassifier instead use EnsembleVoteClassifier, consider that EnsembleVoteClassifier accept only the next parameters: clfs, voting, weights, verbose, use_clones, fit_base_estimators, and 'predict_proba' is not available when voting='hard'"
     else:
         additional_information = ""
 
@@ -20,7 +20,7 @@ This code was written by an expert data scientist working to create a suitable �
 Code formatting the Multi-Layer Stack Ensembling:
 ```python
 (Some packages imported and code necessary to create a Multi-Layer Stack Ensembling Model, which must be called ‘model’. {additional_information}
-This model will be creating reusing all of its base layer model types “list_pipelines” as stackers. Those stacker models take as input not only the predictions of the models at the previous layer, but also the original data features themselves (input vectors are data features concatenated with lowerlayer model predictions).
+This model will be created by reusing all of its base layer model types “list_pipelines” as stackers. Those stacker models take as input not only the predictions of the models at the previous layer, but also the original data features themselves (input vectors are data features concatenated with lowerlayer model predictions).
 The second and final stacking layer applies ensemble selection.
 In addition, from 'model' call its respective 'fit' function to feed the model with 'X_train' and 'y_train')
 ```end

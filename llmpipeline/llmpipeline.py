@@ -6,8 +6,7 @@ from sklearn.model_selection import train_test_split
 from .run_llm_code import run_llm_code
 from .similarity_probability_mix import TransferedPipelines
 
-global list_codeblocks
-list_codeblocks = []
+list_pipelines = []
 
 def get_prompt(
         dataset_X=None, task='classification', **kwargs
@@ -21,21 +20,21 @@ def get_prompt(
     similar_pipelines = TransferedPipelines(dataset_X=dataset_X, task=task, number_of_pipelines=7)
     return f"""
 The dataframe split in ‘X_train’ and ‘y_train’ is loaded in memory.
-This code was written by an expert data scientist working to create a suitable pipeline (preprocessing techniques and estimator) given such a dataset, the task is {task}. It is a snippet of code that import the packages necessary to create a ‘sklearn’ pipeline together with a description. This code takes inspiration from previous similar pipelines and their respective ‘{metric_prompt}’ which worked for related ‘X_train’ and ‘y_train’. Those examples contain the word ‘Pipeline’ which refers to the preprocessing steps (optional) and estimators necessary, the word ‘data’ refers to ‘X_train’ and ‘y_train’ used during training, and finally ‘{metric_prompt}’ represent the performance of the model (the closes to 0 the better):
+This code was written by an expert data scientist working to create a suitable pipeline (preprocessing techniques and estimator) given such a dataset, the task is {task}. It is a snippet of code that import the packages necessary to create a ‘sklearn’ pipeline together with a description. This code takes inspiration from previous similar pipelines and their respective ‘{metric_prompt}’ which worked for related ‘X_train’ and ‘y_train’. Those examples contain the word ‘Pipeline’ which refers to the preprocessing steps (optional) and estimators necessary, the word ‘data’ refers to ‘X_train’ and ‘y_train’ used during training, and finally ‘{metric_prompt}’ represents the performance of the model (the closes to 0 the better):
 “
 {similar_pipelines}
 “
 
 Code formatting for each pipeline created:
 ```python
-# Type of pipeline and description why this pipeline could work 
-(Some sklearn import packages and code using 'sklearn' to create a pipeline object 'pipe'. In addition call its respective 'fit' function to feed the model with 'X_train' and 'y_train')
+# Short explanation of why this pipeline could work 
+(Some sklearn import packages and code using 'sklearn' to create a pipeline object 'pipe'. In addition, call its respective 'fit' function to feed the model with 'X_train' and 'y_train')
 ```end
 
 Each codeblock generates exactly one useful pipeline. Which will be evaluated with "{metric_prompt}". 
 Each codeblock ends with "```end" and starts with "```python"
 Make sure that along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn.
-Make sure to always call and use 'SimpleImputer' since ‘Nan’ values are not allowed in {task}.
+Use 'SimpleImputer' since ‘Nan’ values are not allowed in {task}.
 {additional_data}
 Codeblock:
 """, similar_pipelines
@@ -67,6 +66,7 @@ def generate_features(
         task='classification',
         identifier = ""
 ):
+    global list_pipelines # To make it available to sklearn_wrapper in case the time out is reached
     def format_for_display(code):
         code = code.replace("```python", "").replace("```", "").replace("<end>", "")
         return code
@@ -134,7 +134,7 @@ def generate_features(
         },
     ]
     display_method(f"*Dataset with specific description, task:*\n {task}")
-
+    list_codeblocks = []
     n_iter = iterative
     i = 0
     while i < n_iter:
@@ -180,7 +180,7 @@ def generate_features(
                 {"role": "assistant", "content": code},
                 {
                     "role": "user",
-                    "content": f"""Code execution failed with error: {type(e)} {e}.\n Code: ```python{code}```\n. Generate next pipeline and fix the error. Always call and use 'SimpleImputer' since ‘Nan’ values are not allowed in {task}. \n {additional_data}:
+                    "content": f"""Code execution failed with error: {type(e)} {e}.\n Code: ```python{code}```\n. Generate the pipeline fixing the error. If necessary, call and use 'SimpleImputer'. \n {additional_data}:
                                 ```python
                                 """,
                 },
@@ -195,6 +195,7 @@ def generate_features(
 
         if e is None:
             list_codeblocks.append(code) # We are going to run this code if it is working
+            list_pipelines.append(pipe)
             print('The performance of this pipeline is: ', performance)
             # Get the current timestamp
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -207,12 +208,13 @@ def generate_features(
                 {
                     "role": "user",
                     "content": f"""The pipeline {pipe} provided a score of {performance}.  
-                    Again, here are the similar Pipelines: 
+                    Again, here are the similar Pipelines:
+                    "
                     {similar_pipelines}
-                    
-                    Generate Pipelines that are diverse and not identical to previous iterations. 
+                    "
+                    Generate Pipelines that are diverse and not identical to previous iterations. Yet, you could take inspiration from the pipelines you have previously generated to improve them further.
                     Make sure that along with the necessary preprocessing packages and sklearn models, always call 'Pipeline' from sklearn. {next_add_information}.
-                    Make sure to always call and use 'SimpleImputer' since ‘Nan’ values are not allowed in {task}.
+                    If necessary, call and use 'SimpleImputer' since ‘Nan’ values are not allowed in {task}. 
         Next codeblock:
         """,
                 },

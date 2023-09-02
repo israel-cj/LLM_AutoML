@@ -50,6 +50,8 @@ def TransferedPipelines(dataset_X=None, number_of_pipelines=5, task='classificat
     # let's use 2 (arbirtray) elements for each one of the 'number_of_pipelines' not first most similar pipelines
     most_similar_dataset =  []
     for similar_datasets in list_other_similar_datasets:
+        if similar_datasets == 'numerai28.6':
+            similar_datasets = 'numerai28_6'
         this_similar = automl_benchmark_data[similar_datasets][:2]
         most_similar_dataset+=this_similar
 
@@ -62,7 +64,8 @@ def TransferedPipelines(dataset_X=None, number_of_pipelines=5, task='classificat
 
 if __name__=='__main__':
     import openml
-    dataset = openml.datasets.get_dataset(40983) # 40983 = 'Wilt'
+    # dataset = openml.datasets.get_dataset(40983) # 40983 = 'Wilt'
+    dataset = openml.datasets.get_dataset(990)  # 990 = 'eucalyptus'
     X, y, categorical_indicator, attribute_names = dataset.get_data(
         dataset_format="dataframe", target=dataset.default_target_attribute
     )
