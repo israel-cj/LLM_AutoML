@@ -2,7 +2,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from .run_llm_code import run_llm_code
-from .llmpipeline import generate_features, list_pipelines
+from .llmautoml import generate_features, list_pipelines
 from .llmensemble import generate_code_embedding
 from typing import Union
 import numpy as np
@@ -10,7 +10,7 @@ import pandas as pd
 import stopit
 import uuid
 
-class LLM_pipeline():
+class LLM_AutoML():
     """
     A classifier that uses the CAAFE algorithm to generate features and a base classifier to make predictions.
 

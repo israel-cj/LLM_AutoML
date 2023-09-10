@@ -12,7 +12,7 @@ import openai
 import openml
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from llmpipeline import LLM_pipeline
+from llmautoml import LLM_AutoML
 
 openai.api_key = " " # Introduce your OpenAI key (reminder, you can create a Key with a free account, up to €5 budget "21/08/2023", equivalent to approximately running this framework 500 or more with 3 pipelines solutions)
 
@@ -24,7 +24,7 @@ X, y, categorical_indicator, attribute_names = dataset.get_data(
 X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=0)
 
 ### Setup and Run LLM pipeline - This will be billed to your OpenAI Account!
-automl = LLM_pipeline(
+automl = LLM_AutoML(
     llm_model="gpt-3.5-turbo", # You can choose "gpt-4" in case you in case you have a paid account
     iterations=3,
     make_ensemble=True,
@@ -47,7 +47,7 @@ import openai
 import openml
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
-from llmpipeline import LLM_pipeline
+from llmautoml import LLM_AutoML
 
 
 openai.api_key = " " # Introduce your OpenAI key (reminder, you can create a Key with a free account, up to €5 budget "21/08/2023", equivalent to approximately running this framework 500 or more times with 3 pipelines solutions)
@@ -60,7 +60,7 @@ X, y, categorical_indicator, attribute_names = dataset.get_data(
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
 ### Setup and Run LLM pipeline - This will be billed to your OpenAI Account!
-automl = LLM_pipeline(
+automl = LLM_AutoML(
     llm_model="gpt-3.5-turbo", # You can choose "gpt-4" in case you in case you have a paid account
     iterations=3,
     task=type_task,
