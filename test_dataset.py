@@ -6,7 +6,7 @@ from llmautoml import LLM_AutoML
 import openml
 
 #
-openai.api_key = "s"
+openai.api_key = ""
 task_id = 2073
 task = openml.tasks.get_task(task_id)
 datasetID = task.dataset_id
