@@ -11,9 +11,9 @@ list_pipelines = []
 def get_prompt(
         dataset_X=None, task='classification', **kwargs
 ):
-    additional_data = ''
     if task == 'classification':
         metric_prompt = 'Log loss'
+        additional_data = ''
     else:
         metric_prompt = 'Mean Squared Error'
         additional_data = f"If it will be used in the Pipeline, call ‘f_regression’. "

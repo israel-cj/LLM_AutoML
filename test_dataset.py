@@ -4,8 +4,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from llmpipeline import LLM_pipeline
 import openml
-import time
-import csv
+
 #
 openai.api_key = ""
 task_id = 2073
