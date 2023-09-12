@@ -1,0 +1,56 @@
+2023-09-11 12:11:15,"
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.feature_selection import SelectPercentile, f_classif
+from sklearn.ensemble import RandomForestClassifier
+
+pipe = make_pipeline(
+    SimpleImputer(),
+    StandardScaler(),
+    SelectPercentile(percentile=96, score_func=f_classif),
+    RandomForestClassifier(
+        bootstrap=False,
+        criterion='entropy',
+        max_features=0.1,
+        min_samples_leaf=1,
+        min_samples_split=4,
+        n_estimators=100
+    )
+)
+pipe.fit(X_train, y_train)
+",0.5844311377245509
+2023-09-11 12:11:23,"
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.ensemble import GradientBoostingClassifier
+
+pipe = make_pipeline(
+    PolynomialFeatures(degree=2, include_bias=False, interaction_only=False),
+    GradientBoostingClassifier(
+        learning_rate=0.1,
+        max_depth=3,
+        max_features=0.25,
+        min_samples_leaf=7,
+        min_samples_split=20,
+        n_estimators=100,
+        subsample=0.9
+    )
+)
+pipe.fit(X_train, y_train)",0.5425149700598803
+2023-09-11 12:11:27,"
+from sklearn.pipeline import make_pipeline
+from sklearn.kernel_approximation import RBFSampler
+from sklearn.linear_model import LogisticRegression
+
+pipe = make_pipeline(
+    RBFSampler(gamma=0.95),
+    RBFSampler(gamma=0.85),
+    LogisticRegression(
+        C=25.0,
+        dual=False,
+        penalty='l2',
+        solver='lbfgs'
+    )
+)
+pipe.fit(X_train, y_train)",0.5724550898203593

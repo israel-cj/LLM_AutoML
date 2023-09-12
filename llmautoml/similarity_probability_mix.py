@@ -17,7 +17,7 @@ def compute_probability(X):
 
 def TransferedPipelines(dataset_X=None, number_of_pipelines=5, task='classification'):
     # Define how many similar task we are going to consider
-    search_similar_datasets = 5
+    search_similar_datasets = 10
     # Load the JSON data which contains the pipelines from the AutoMLBenchmark
     if task=='classification':
         automl_benchmark_data = data_automl
@@ -52,13 +52,14 @@ def TransferedPipelines(dataset_X=None, number_of_pipelines=5, task='classificat
     for similar_datasets in list_other_similar_datasets:
         if similar_datasets == 'numerai28.6':
             similar_datasets = 'numerai28_6'
-        this_similar = automl_benchmark_data[similar_datasets][:2]
+        this_similar = automl_benchmark_data[similar_datasets][:3]
         most_similar_dataset+=this_similar
 
     if len(most_similar_dataset) <= number_of_pipelines:
         this_list = most_similar_dataset
         return '\n'.join(this_list)
     else:
+        # Random pipelines to add exploration :)
         this_list = random.sample(most_similar_dataset, number_of_pipelines)
         return '\n'.join(this_list)
 

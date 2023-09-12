@@ -61,11 +61,24 @@ class LLM_AutoML():
         # Generate a unique UUID
         print('uid', self.uid)
         def get_score_pipeline(pipeline):
-            # The split is only to make it faster
+            # A small sample if the dataset is too large
+            value_to_consider_for_fast_training = 5000
             if self.task == "classification":
-                X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=0)
+                if len(X) >= value_to_consider_for_fast_training:
+                    X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                                                        train_size=value_to_consider_for_fast_training,
+                                                                        stratify=y, random_state=0)
+                else:
+                    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, stratify=y,
+                                                                        random_state=0)
             else:
-                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+                if len(X) >= value_to_consider_for_fast_training:
+                    X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                                                        train_size=value_to_consider_for_fast_training,
+                                                                        random_state=0)
+                else:
+                    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, random_state=0)
+
             performance = pipeline.score(X_train, y_train)
             return performance
 
@@ -77,18 +90,11 @@ class LLM_AutoML():
                 y = self._label_encoder.transform(y_)
                 self._decoding = True
 
-        # if self.task == 'regression':
-        #     # Identify rows with missing values in X
-        #     missing_rows = np.isnan(X).any(axis=1)
-        #
-        #     # Remove rows with missing values from X and y
-        #     X = X[~missing_rows]
-        #     y = y[~missing_rows]
         self.X_ = X
         self.y_ = y
         try:
             with stopit.ThreadingTimeout(self.timeout):
-                self.code, prompt, messages, list_codeblocks_generated = generate_features(
+                self.code, prompt, messages, list_codeblocks_generated, list_performance_pipelines = generate_features(
                     X,
                     y,
                     model=self.llm_model,
@@ -100,19 +106,11 @@ class LLM_AutoML():
                     identifier=self.uid,
                 )
             if len(list_pipelines)>0:
-                self.pipe = list_pipelines[-1] # We get at least 1 pipeline
-                self.pipe.fit(X, y)
+                index_best_pipeline = list_performance_pipelines.index(max(list_performance_pipelines))
+                self.pipe = list_pipelines[index_best_pipeline] # We get at least 1 pipeline to return
+                # self.pipe.fit(X, y)
 
-            get_pipelines = []
-            for code_pipe in list_codeblocks_generated:
-                try:
-                    this_pipe = run_llm_code(code_pipe, X, y)
-                except Exception as e:
-                    print(f"Exception: {e}")
-                    this_pipe = None
-                if isinstance(this_pipe, Pipeline):
-                    get_pipelines.append(this_pipe)
-
+            get_pipelines = list_pipelines
             if len(get_pipelines) == 0:
                 raise ValueError("Not pipeline could be created")
 
@@ -160,20 +158,42 @@ class LLM_AutoML():
 
             # Ensemble not allowed but more than one model in the list, the last model generated will be send it
             if len(get_pipelines) > 1 and self.make_ensemble == False:
-                list_performance = [get_score_pipeline(final_pipeline) for final_pipeline in get_pipelines]
+                print('Returning the best pipeline without ensemble')
+                # list_performance = [get_score_pipeline(final_pipeline) for final_pipeline in get_pipelines]
                 # Index best pipeline:
-                index_best_pipeline = list_performance.index(max(list_performance))
+                index_best_pipeline = list_performance_pipelines.index(max(list_performance_pipelines))
                 # Return the one with the best performance
-                print('Returning the best pipeline')
                 self.pipe = get_pipelines[index_best_pipeline]
-
+            print('The model has been created, final fit')
             self.pipe.fit(X, y)
 
         except stopit.TimeoutException:
-            if self.pipe is None and len(list_pipelines)>0:
-                self.pipe = list_pipelines[-1]
-                self.pipe.fit(X, y)
             print("Timeout expired")
+
+            # Train in a small portion to return something basic at least
+            # A small sample if the dataset is too large
+            value_to_consider_for_fast_training = 5000
+            if self.task == "classification":
+                if len(X) >= value_to_consider_for_fast_training:
+                    X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                                                        train_size=value_to_consider_for_fast_training,
+                                                                        stratify=y, random_state=0)
+                else:
+                    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, stratify=y,
+                                                                        random_state=0)
+            else:
+                if len(X) >= value_to_consider_for_fast_training:
+                    X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                                                        train_size=value_to_consider_for_fast_training,
+                                                                        random_state=0)
+                else:
+                    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, random_state=0)
+
+            if self.pipe is None and len(list_pipelines)>0:
+                index_best_pipeline = list_performance_pipelines.index(max(list_performance_pipelines))
+                self.pipe = list_pipelines[index_best_pipeline]
+                self.pipe.fit(X_train, y_train)
+
 
     def predict(self, X):
         if self.task == "classification":

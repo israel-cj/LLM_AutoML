@@ -1,0 +1,41 @@
+2023-09-11 12:13:45,"
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+pipe = make_pipeline(
+    SimpleImputer(),
+    StandardScaler(),
+    LogisticRegression()
+)
+
+pipe.fit(X_train, y_train)
+",0.5616766467065868
+2023-09-11 12:13:54,"
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+
+pipe = make_pipeline(
+    SimpleImputer(),
+    StandardScaler(),
+    RandomForestClassifier(n_estimators=100, max_depth=6, min_samples_split=10)
+)
+
+pipe.fit(X_train, y_train)
+",0.5808383233532934
+2023-09-11 12:14:08,"
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.svm import SVC
+
+pipe = make_pipeline(
+    SimpleImputer(),
+    MinMaxScaler(),
+    SVC(kernel='rbf', C=1.0, gamma='scale')
+)
+
+pipe.fit(X_train, y_train)",0.5640718562874252

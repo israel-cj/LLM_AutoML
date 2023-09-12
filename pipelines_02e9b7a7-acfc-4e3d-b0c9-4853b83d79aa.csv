@@ -1,0 +1,36 @@
+2023-09-11 10:56:42,"
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+pipe = make_pipeline(
+    SimpleImputer(),
+    StandardScaler(),
+    LogisticRegression()
+)
+pipe.fit(X_train, y_train)
+",0.6321981734854314
+2023-09-11 10:56:57,"
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import RobustScaler
+from sklearn.tree import DecisionTreeClassifier
+
+pipe = make_pipeline(
+    RobustScaler(),
+    DecisionTreeClassifier(criterion='entropy', max_depth=9, min_samples_leaf=18, min_samples_split=17)
+)
+pipe.fit(X_train, y_train)
+",0.6280232830428528
+2023-09-11 10:57:12,"
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import Binarizer
+from sklearn.linear_model import LogisticRegression
+
+pipe = make_pipeline(
+    Binarizer(threshold=0.5),
+    LogisticRegression(C=20.0, dual=False, penalty='l2', solver='lbfgs')
+)
+pipe.fit(X_train, y_train)",Input contains NaN

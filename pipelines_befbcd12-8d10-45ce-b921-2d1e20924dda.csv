@@ -1,0 +1,72 @@
+2023-09-12 14:51:05,"
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import MaxAbsScaler
+from sklearn.ensemble import AdaBoostRegressor
+
+pipe = make_pipeline(
+    SimpleImputer(),
+    MaxAbsScaler(),
+    AdaBoostRegressor(learning_rate=0.001, loss='square', n_estimators=100)
+)
+
+pipe.fit(X_train, y_train)
+","Cannot use mean strategy with non-numeric data:
+could not convert string to float: 'PIT'"
+2023-09-12 14:51:13,"from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import MaxAbsScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import AdaBoostRegressor
+import numpy as np
+
+numeric_columns_dataset = X_train.select_dtypes(include=[np.number]).columns
+categorical_columns_dataset = X_train.select_dtypes(include=['object']).columns
+
+numeric_transformer = make_pipeline(
+    SimpleImputer(),
+    MaxAbsScaler()
+)
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', numeric_transformer, numeric_columns_dataset),
+        ('cat', SimpleImputer(strategy='most_frequent'), categorical_columns_dataset)
+    ]
+)
+
+pipe = make_pipeline(
+    preprocessor,
+    AdaBoostRegressor(learning_rate=0.001, loss='square', n_estimators=100)
+)
+
+pipe.fit(X_train, y_train)
+",0.8650752524783651
+2023-09-12 14:51:18,"from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import MaxAbsScaler
+from sklearn.feature_selection import SelectPercentile, f_regression
+from sklearn.ensemble import RandomForestRegressor
+
+pipe = make_pipeline(
+    SelectPercentile(score_func=f_regression, percentile=50),
+    SimpleImputer(),
+    MaxAbsScaler(),
+    RandomForestRegressor(bootstrap=False, max_features=0.1, min_samples_leaf=5, min_samples_split=8, n_estimators=100)
+)
+
+pipe.fit(X_train, y_train)",Input contains NaN
+2023-09-12 14:51:23,"from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import MaxAbsScaler
+from sklearn.feature_selection import SelectPercentile, f_regression
+from sklearn.ensemble import RandomForestRegressor
+
+pipe = make_pipeline(
+    SelectPercentile(score_func=f_regression, percentile=50),
+    SimpleImputer(strategy='mean'),
+    MaxAbsScaler(),
+    RandomForestRegressor(bootstrap=False, max_features=0.1, min_samples_leaf=5, min_samples_split=8, n_estimators=100)
+)
+
+pipe.fit(X_train, y_train)",Input contains NaN

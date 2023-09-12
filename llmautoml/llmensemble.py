@@ -81,10 +81,22 @@ def generate_code_embedding(
         return code
 
     def execute_and_evaluate_code_block(code):
+        # A small sample if the dataset is too large
+        value_to_consider_for_fast_training = 5000
         if task == "classification":
-            X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, stratify=y, random_state=0)
+            if len(X) >= value_to_consider_for_fast_training:
+                X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                                                    train_size=value_to_consider_for_fast_training,
+                                                                    stratify=y, random_state=0)
+            else:
+                X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, stratify=y, random_state=0)
         else:
-            X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, random_state=0)
+            if len(X) >= value_to_consider_for_fast_training:
+                X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                                                    train_size=value_to_consider_for_fast_training,
+                                                                    random_state=0)
+            else:
+                X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, random_state=0)
 
         try:
             pipe = run_llm_code_ensemble(
@@ -156,11 +168,25 @@ def generate_code_embedding(
             with open(f'pipelines_{identifier}.csv', 'a', newline='') as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerow([timestamp, code, e])
+
+            general_considerations = ''
+            if 'required positional argument' in str(e):
+                general_considerations = "Consider passing the list_pipelines to the ensemble"
+            if task == 'classification':
+                if 'required positional argument' in str(e):
+                    general_considerations = "Consider that EnsembleVoteClassifier accept only the next parameters: (clfs, voting, weights, verbose, use_clones, fit_base_estimators), consider the restriction that 'voting' must always be 'soft' (voting='soft')."
+            else:
+                if 'required positional argument' in str(e):
+                    general_considerations = "Consider that StackingRegressor from sklearn accept only the next parameters: (estimators, final_estimator, cv, n_jobs, passthrough, verbose)"
+
             messages += [
                 {"role": "assistant", "content": code},
                 {
                     "role": "user",
-                    "content": f"""Code execution failed with error: {type(e)} {e}.\n Code: ```python{code}```\n. Do it again and fix error.
+                    "content": f"""Code execution failed, error type {type(e)}, error: {str(e)}.\n 
+                    Code: ```python{code}```\n. 
+                    {general_considerations} \n
+                    Do it again and fix error, breathe and think deeply.\n
                                 ```python
                                 """,
                 },

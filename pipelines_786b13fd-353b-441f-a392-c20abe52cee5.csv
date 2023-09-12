@@ -1,0 +1,28 @@
+2023-09-11 10:58:33,"
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+pipe = make_pipeline(
+    SimpleImputer(strategy='most_frequent'),
+    StandardScaler(),
+    LogisticRegression()
+)
+
+pipe.fit(X_train, y_train)
+","Input X contains NaN.
+LogisticRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values"
+2023-09-11 10:58:55,"from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import HistGradientBoostingClassifier
+
+pipe = make_pipeline(
+    SimpleImputer(strategy='mean'),
+    StandardScaler(),
+    HistGradientBoostingClassifier()
+)
+
+pipe.fit(X_train, y_train)
+",0.6641220352590907

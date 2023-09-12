@@ -1,0 +1,95 @@
+2023-09-11 12:53:42,"
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+pipe = make_pipeline(
+    SimpleImputer(),
+    StandardScaler(),
+    LogisticRegression()
+)
+
+pipe.fit(X_train, y_train)
+",0.6245373172363266
+2023-09-11 12:53:59,"
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.ensemble import RandomForestClassifier
+
+pipe = make_pipeline(
+    SimpleImputer(),
+    MinMaxScaler(),
+    RandomForestClassifier(n_estimators=100, max_depth=10, min_samples_split=5)
+)
+
+pipe.fit(X_train, y_train)",0.654257318510496
+2023-09-11 12:59:12,"
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.svm import SVC
+
+pipe = make_pipeline(
+    SimpleImputer(),
+    PolynomialFeatures(degree=2),
+    SVC(kernel='rbf', C=1.0, probability=True)
+)
+
+pipe.fit(X_train, y_train)",
+2023-09-11 12:59:31,"
+from sklearn.ensemble import VotingClassifier
+from mlxtend.classifier import EnsembleVoteClassifier
+
+# Create a list of classifiers for the first layer
+classifiers = []
+for pipeline in list_pipelines:
+    classifiers.append(pipeline)
+
+# Create the first layer of stackers
+stackers = []
+for clf in classifiers:
+    stacker = make_pipeline(
+        make_union(
+            FunctionTransformer(lambda X: X, validate=False),
+            FunctionTransformer(lambda X: clf.predict_proba(X), validate=False)
+        ),
+        clf
+    )
+    stackers.append(stacker)
+
+# Create the second layer of stackers
+stacking_model = EnsembleVoteClassifier(clfs=stackers, voting='soft')
+
+# Fit the model with the training data
+stacking_model.fit(X_train, y_train)
+",name 'make_pipeline' is not defined
+2023-09-11 12:59:42,"from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import FunctionTransformer
+from sklearn.pipeline import make_union
+from sklearn.ensemble import VotingClassifier
+from mlxtend.classifier import EnsembleVoteClassifier
+
+# Create a list of classifiers for the first layer
+classifiers = []
+for pipeline in list_pipelines:
+    classifiers.append(pipeline)
+
+# Create the first layer of stackers
+stackers = []
+for clf in classifiers:
+    stacker = make_pipeline(
+        make_union(
+            FunctionTransformer(lambda X: X, validate=False),
+            FunctionTransformer(lambda X: clf.predict_proba(X), validate=False)
+        ),
+        clf
+    )
+    stackers.append(stacker)
+
+# Create the second layer of stackers
+stacking_model = EnsembleVoteClassifier(clfs=stackers, voting='soft')
+
+# Fit the model with the training data
+stacking_model.fit(X_train, y_train)",name 'clf' is not defined

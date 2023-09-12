@@ -1,0 +1,74 @@
+2023-09-11 12:38:18,"
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+pipe = make_pipeline(
+    SimpleImputer(),
+    StandardScaler(),
+    LogisticRegression()
+)
+
+pipe.fit(X_train, y_train)
+",0.6245373172363266
+2023-09-11 12:38:27,"
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import RobustScaler
+from sklearn.tree import DecisionTreeClassifier
+
+pipe = make_pipeline(
+    SimpleImputer(),
+    RobustScaler(),
+    DecisionTreeClassifier(criterion='gini', max_depth=10, min_samples_leaf=20, min_samples_split=15)
+)
+
+pipe.fit(X_train, y_train)",0.5831459242506292
+2023-09-11 12:38:32,"
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import Normalizer
+from sklearn.naive_bayes import MultinomialNB
+
+pipe = make_pipeline(
+    SimpleImputer(),
+    Normalizer(norm='l1'),
+    MultinomialNB(alpha=0.1, fit_prior=False)
+)
+
+pipe.fit(X_train, y_train)",Negative values in data passed to MultinomialNB (input X)
+2023-09-11 12:38:37,"
+from sklearn.ensemble import VotingClassifier
+from mlxtend.classifier import EnsembleVoteClassifier
+
+# Create a list of base estimators
+base_estimators = []
+
+# Iterate over the list of pipelines
+for pipeline in list_pipelines:
+    # Append the pipeline to the list of base estimators
+    base_estimators.append(('pipeline', pipeline))
+
+# Create the ensemble vote classifier
+model = EnsembleVoteClassifier(clfs=base_estimators, voting='soft')
+
+# Fit the model with X_train and y_train
+model.fit(X_train, y_train)
+",Cannot clone object ''pipeline'' (type <class 'str'>): it does not seem to be a scikit-learn estimator as it does not implement a 'get_params' method.
+2023-09-11 12:38:43,"from sklearn.ensemble import VotingClassifier
+from mlxtend.classifier import EnsembleVoteClassifier
+
+# Create a list of base estimators
+base_estimators = []
+
+# Iterate over the list of pipelines
+for pipeline in list_pipelines:
+    # Append the pipeline to the list of base estimators
+    base_estimators.append(('pipeline', pipeline.named_steps['classifier']))
+
+# Create the ensemble vote classifier
+model = EnsembleVoteClassifier(clfs=base_estimators, voting='soft')
+
+# Fit the model with X_train and y_train
+model.fit(X_train, y_train)",'classifier'

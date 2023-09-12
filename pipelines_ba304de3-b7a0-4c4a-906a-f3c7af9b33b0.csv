@@ -1,0 +1,47 @@
+2023-09-12 14:49:27,"
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+pipe = make_pipeline(
+    SimpleImputer(),
+    StandardScaler(),
+    LogisticRegression()
+)
+
+pipe.fit(X_train, y_train)
+",0.5616766467065868
+2023-09-12 14:49:32,"
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.ensemble import RandomForestClassifier
+
+pipe = make_pipeline(
+    SimpleImputer(),
+    MinMaxScaler(),
+    RandomForestClassifier(bootstrap=True, criterion='gini', max_features=0.4, min_samples_leaf=3, min_samples_split=5, n_estimators=200)
+)
+
+pipe.fit(X_train, y_train)
+",0.5952095808383233
+2023-09-12 14:49:36,"
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import RobustScaler
+from sklearn.svm import SVC
+
+pipe = make_pipeline(
+    SimpleImputer(),
+    RobustScaler(),
+    SVC(C=1.0, kernel='rbf', gamma='scale', probability=True)
+)
+
+pipe.fit(X_train, y_train)",0.5580838323353293
+2023-09-12 14:49:39,"
+from mlxtend.classifier import EnsembleVoteClassifier
+
+model = EnsembleVoteClassifier(clfs=list_pipelines, voting='soft')
+model.fit(X_train, y_train)
+",0.5796407185628742
