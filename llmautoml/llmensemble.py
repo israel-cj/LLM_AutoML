@@ -194,3 +194,402 @@ def generate_code_embedding(
             continue
 
     return pipe
+
+# https://developer.ibm.com/articles/stack-machine-learning-models-get-better-results/
+# https://medium.com/@brijesh_soni/stacking-to-improve-model-performance-a-comprehensive-guide-on-ensemble-learning-in-python-9ed53c93ce28
+
+def generate_ensemble_manually(
+        X, y,
+        get_pipelines,
+        task='classification',
+):
+    print('Doing stacking manually')
+    if task == "classification":
+        import pandas as pd
+        from sklearn.svm import SVC
+        from mlxtend.classifier import StackingCVClassifier
+
+        # Define the meta regressor
+        svc_rbf = SVC(kernel='rbf', probability=True)
+
+        # Base models without preprocessing steps
+        estimators = [list(pipe.named_steps.values())[-1] for pipe in get_pipelines]
+
+        # Create the stacked model
+        stacker = StackingCVClassifier(classifiers=estimators,
+                                       meta_classifier=svc_rbf,
+                                       cv=5,
+                                       use_features_in_secondary=True,
+                                       store_train_meta_features=True,
+                                       )
+
+        preprocessing_steps = list(get_pipelines[0].named_steps.values())[:-1]
+        numeric_X = preprocessing_steps[0].fit_transform(X)
+        numeric_X = pd.DataFrame(numeric_X, columns=[f"{i}" for i in range(numeric_X.shape[1])])
+        stacker.fit(numeric_X, y)
+    else:
+        import pandas as pd
+        from sklearn.svm import SVR
+        from mlxtend.regressor import StackingCVRegressor
+
+        # Define the meta regressor
+        svr_rbf = SVR(kernel='rbf')
+
+        # Base models without preprocessing steps
+        estimators = [list(pipe.named_steps.values())[-1] for pipe in get_pipelines]
+
+        # Create the stacked model
+        stacker = StackingCVRegressor(regressors=estimators,
+                                      meta_regressor=svr_rbf,
+                                      cv=5,
+                                      use_features_in_secondary=True,
+                                      store_train_meta_features=True,
+                                      )
+
+        preprocessing_steps = list(get_pipelines[0].named_steps.values())[:-1]
+        numeric_X = preprocessing_steps[0].fit_transform(X)
+        numeric_X = pd.DataFrame(numeric_X, columns=[f"{i}" for i in range(numeric_X.shape[1])])
+        stacker.fit(numeric_X, y)
+    return stacker
+
+# def generate_ensemble_manually(
+#         X, y,
+#         get_pipelines,
+#         task='classification',
+# ):
+#     print('Doing stacking manually')
+#     if task == "classification":
+#         from mlxtend.classifier import StackingClassifier
+#         from sklearn.pipeline import make_pipeline
+#         from sklearn.linear_model import LogisticRegression
+#
+#         # Create a list of base models
+#         base_models = [make_pipeline(model) for model in get_pipelines]
+#
+#         # Create the meta-model
+#         meta_model = LogisticRegression()
+#
+#         # Create the stacked ensemble
+#         stacked_ensemble = StackingClassifier(
+#             classifiers=base_models,
+#             meta_classifier=meta_model,
+#             use_probas=True,
+#             average_probas=False
+#         )
+#
+#         # Train the stacked ensemble on the training data
+#         stacked_ensemble.fit(X, y)
+#
+#     else:
+#         from mlxtend.regressor import StackingRegressor
+#         from sklearn.pipeline import make_pipeline
+#         from sklearn.linear_model import LinearRegression
+#         from sklearn.pipeline import make_pipeline
+#         from sklearn.compose import ColumnTransformer
+#         from sklearn.impute import SimpleImputer
+#         from sklearn.preprocessing import StandardScaler, OrdinalEncoder
+#
+#         # Identify categorical and numeric column names
+#         categorical_cols = X.select_dtypes(include=['object']).columns
+#         numeric_cols = X.select_dtypes(include=['int64', 'float64']).columns
+#
+#         # Create the column transformer
+#         preprocessor = ColumnTransformer(
+#             transformers=[
+#                 ('num', SimpleImputer(strategy='mean'), numeric_cols),
+#                 ('cat', SimpleImputer(strategy='most_frequent'), categorical_cols),
+#                 ('cat_encoder', OrdinalEncoder(), categorical_cols)
+#             ])
+#
+#         # Create a list of base models
+#         base_models = [make_pipeline(preprocessor, model) for model in get_pipelines]
+#
+#         # Create the meta-model
+#         meta_model = LinearRegression()
+#
+#         # Create the stacked ensemble
+#         stacked_ensemble = StackingRegressor(
+#             regressors=base_models,
+#             meta_regressor=meta_model,
+#             use_features_in_secondary=True
+#         )
+#
+#         # Train the stacked ensemble on the training data
+#         stacked_ensemble.fit(X, y)
+#
+#     return stacked_ensemble
+
+# def generate_ensemble_manually(
+#         X, y,
+#         get_pipelines,
+#         task='classification',
+# ):
+#     print('Doing stacking manually')
+#     import numpy as np
+#     from sklearn.ensemble import StackingClassifier, StackingRegressor
+#     from sklearn.svm import SVC, SVR
+#     from sklearn.pipeline import make_pipeline
+#     if task == "classification":
+#         # Create the first layer of stackers
+#         stackers = []
+#         for pipeline in get_pipelines:
+#             stacker = pipeline
+#             stackers.append(stacker)
+#
+#         # Create the second layer of stackers
+#         def predict_proba_with_features(model, X):
+#             # Get the predicted probabilities from the base model
+#             proba = model.predict_proba(X)
+#
+#             # Add the original features to the predicted probabilities
+#             features = X.values
+#             return np.hstack([proba, features])
+#
+#         # Create the stacked model with preprocessing steps
+#         stacker = StackingClassifier(estimators=[('stacker_' + str(i), stacker) for i, stacker in enumerate(stackers)],
+#                                      final_estimator=SVC(kernel='rbf', probability=True),
+#                                      cv=5,
+#                                      passthrough=True,
+#                                      )
+#
+#         # Create a new pipeline that includes the stacked model
+#         pipe = make_pipeline(stacker)
+#
+#         # Train the stacked model on the training data
+#         pipe.fit(X, y)
+#
+#         # Add the original features to the predicted probabilities
+#         meta_features = np.apply_along_axis(predict_proba_with_features, 1,
+#                                             [est[1] for est in stacker.named_estimators_], X)
+#
+#         # Train the meta-model on the predicted probabilities and original features
+#         pipe.named_steps['stackingclassifier'].final_estimator_.fit(meta_features, y)
+#
+#
+#     else:
+#         # Create the first layer of stackers
+#         stackers = []
+#         for pipeline in get_pipelines:
+#             stacker = pipeline
+#             stackers.append(stacker)
+#
+#         # Create the second layer of stackers
+#         def predict_with_features_regr(model, X):
+#             # Get the predicted values from the base model
+#             y_pred = model.predict(X)
+#
+#             # Add the original features to the predicted values
+#             features = X.values
+#             return np.hstack([y_pred.reshape(-1, 1), features])
+#
+#         # Create the stacked model with preprocessing steps
+#         stacker = StackingRegressor(estimators=[('stacker_' + str(i), stacker) for i, stacker in enumerate(stackers)],
+#                                     final_estimator=SVR(kernel='rbf'),
+#                                     cv=5,
+#                                     passthrough=True,
+#                                     )
+#
+#         # Create a new pipeline that includes the stacked model
+#         pipe = make_pipeline(stacker)
+#
+#         # Train the stacked model on the training data
+#         pipe.fit(X, y)
+#
+#         # Add the original features to the predicted values
+#         meta_features = np.apply_along_axis(predict_with_features_regr, 1,
+#                                             [est[1] for est in stacker.named_estimators_], X)
+#
+#         # Train the meta-model on the predicted values and original features
+#         pipe.named_steps['stackingregressor'].final_estimator_.fit(meta_features, y)
+#
+#     return pipe
+
+# def generate_ensemble_manually(
+#         get_pipelines,
+#         task='classification',
+# ):
+#     print('Doing stacking manually')
+#     from sklearn.pipeline import make_pipeline
+#     if task == "classification":
+#         from sklearn.svm import SVC
+#         from mlxtend.classifier import StackingCVClassifier
+#
+#         # Extract the preprocessing steps from the first pipeline
+#         preprocessing_steps = list(get_pipelines[0].named_steps.values())[:-1]
+#
+#         # Create the first layer of stackers
+#         svc_rbf = SVC(kernel='rbf', probability=True)
+#
+#         # Create the stacked model with preprocessing steps
+#         stacker = StackingCVClassifier(classifiers=get_pipelines,
+#                                        meta_classifier=svc_rbf,
+#                                        cv=5,
+#                                        use_features_in_secondary=True,
+#                                        store_train_meta_features=True,
+#                                        )
+#
+#         # Create a new pipeline that includes the preprocessing steps and the stacked model
+#         pipe = make_pipeline(*preprocessing_steps, stacker)
+#
+#
+#     else:
+#         from sklearn.ensemble import VotingRegressor
+#         from sklearn.svm import SVR
+#         from mlxtend.regressor import StackingCVRegressor
+#
+#         # Extract the preprocessing steps from the first pipeline
+#         preprocessing_steps = list(get_pipelines[0].named_steps.values())[:-1]
+#
+#         # Define the meta regressor
+#         svr_rbf = SVR(kernel='rbf')
+#
+#         # Create the stacked model with preprocessing steps
+#         stacker = StackingCVRegressor(regressors=get_pipelines,
+#                                       meta_regressor=svr_rbf,
+#                                       cv=5,
+#                                       use_features_in_secondary=True,
+#                                       store_train_meta_features=True,
+#                                       )
+#
+#         # Create a new pipeline that includes the preprocessing steps and the stacked model
+#         pipe = make_pipeline(*preprocessing_steps, stacker)
+#
+#     return pipe
+
+# def generate_ensemble_manually(
+#         X, y,
+#         get_pipelines,
+#         task='classification',
+# ):
+#     print('Doing stacking manually')
+#     if task == "classification":
+#         from sklearn.ensemble import VotingClassifier
+#         from sklearn.svm import SVC
+#         from mlxtend.classifier import StackingCVClassifier
+#
+#         # Create the first layer of stackers
+#         svc_rbf = SVC(kernel='rbf', probability=True)
+#         stackers = []
+#         for pipeline in get_pipelines:
+#             stacker = StackingCVClassifier(classifiers=[pipeline],
+#                                            meta_classifier=svc_rbf,
+#                                            cv=5,
+#                                            use_features_in_secondary=True,
+#                                            store_train_meta_features=True,
+#                                            )
+#             stackers.append(stacker)
+#
+#         # Create the second layer of stackers
+#         estimators = [('stacker' + str(i), stacker) for i, stacker in enumerate(stackers)]
+#         pipe = VotingClassifier(estimators=estimators, voting='soft')
+#         pipe.fit(X, y)
+#
+#     else:
+#         from sklearn.ensemble import VotingRegressor
+#         from sklearn.svm import SVR
+#         from mlxtend.regressor import StackingCVRegressor
+#
+#         # Define the meta regressor
+#         svr_rbf = SVR(kernel='rbf')
+#
+#         # Create the first layer of stackers
+#         stackers = []
+#         for pipeline in get_pipelines:
+#             stacker = StackingCVRegressor(regressors=[pipeline],
+#                                           meta_regressor=svr_rbf,
+#                                           cv=5,
+#                                           use_features_in_secondary=True,
+#                                           store_train_meta_features=True,
+#                                           )
+#             stackers.append(stacker)
+#
+#         # Create the second layer of stackers
+#         estimators = [('stacker' + str(i), stacker) for i, stacker in enumerate(stackers)]
+#         pipe = VotingRegressor(estimators=estimators)
+#         pipe.fit(X, y)
+#     return pipe
+
+
+# def generate_ensemble_manually(
+#         get_pipelines,
+#         task='classification',
+# ):
+#     print('Doing stacking manually')
+#     if task == "classification":
+#         from sklearn.ensemble import VotingClassifier
+#         from sklearn.svm import SVC
+#         from mlxtend.classifier import StackingCVClassifier
+#
+#         # Create the first layer of stackers
+#         svc_rbf = SVC(kernel='rbf', probability=True)
+#         stackers1 = []
+#         for pipeline in get_pipelines:
+#             stacker = StackingCVClassifier(classifiers=[pipeline],
+#                                            meta_classifier=svc_rbf)
+#             stackers1.append(stacker)
+#
+#         # Create the second layer of stackers
+#         stackers2 = []
+#         for stacker1 in stackers1:
+#             stacker = StackingCVClassifier(classifiers=[stacker1],
+#                                            meta_classifier=svc_rbf)
+#             stackers2.append(stacker)
+#
+#         # Create the third layer of stackers
+#         estimators = [('stacker' + str(i), stacker) for i, stacker in enumerate(stackers2)]
+#         pipe = VotingClassifier(estimators=estimators, voting='soft')
+#
+#     else:
+#         from sklearn.ensemble import VotingRegressor
+#         from sklearn.svm import SVR
+#         from mlxtend.regressor import StackingCVRegressor
+#
+#         # Define the meta regressor
+#         svr_rbf = SVR(kernel='rbf')
+#
+#         # Create the first layer of stackers
+#         stackers1 = []
+#         for pipeline in get_pipelines:
+#             stacker = StackingCVRegressor(regressors=[pipeline],
+#                                           meta_regressor=svr_rbf)
+#             stackers1.append(stacker)
+#
+#         # Create the second layer of stackers
+#         stackers2 = []
+#         for stacker1 in stackers1:
+#             stacker = StackingCVRegressor(regressors=[stacker1],
+#                                            meta_regressor=svr_rbf)
+#             stackers2.append(stacker)
+#
+#         # Create the third layer of stackers
+#         estimators = [('stacker' + str(i), stacker) for i, stacker in enumerate(stackers2)]
+#         pipe = VotingRegressor(estimators=estimators)
+#
+#     return pipe
+
+# Original:
+
+
+# print('Ensemble with LLM failed, doing it manually')
+# if task == "classification":
+#     from sklearn.ensemble import VotingClassifier
+#     from sklearn.svm import SVC
+#     from mlxtend.classifier import StackingClassifier
+#
+#     # Create the first layer of stackers
+#     svc_rbf = SVC(kernel='rbf', probability=True)
+#     stackers = []
+#     for pipeline in get_pipelines:
+#         stacker = StackingClassifier(classifiers=[pipeline],
+#                                      meta_classifier=svc_rbf)
+#         stackers.append(stacker)
+#
+#     # Create the second layer of stackers
+#     estimators = [('stacker' + str(i), stacker) for i, stacker in enumerate(stackers)]
+#     pipe = VotingClassifier(estimators=estimators, voting='soft')
+#
+# else:
+#     from sklearn.ensemble import VotingRegressor
+#     # Create the ensemble
+#     estimators = [('pipeline' + str(i), pipeline) for i, pipeline in enumerate(get_pipelines)]
+#     pipe = VotingRegressor(estimators=estimators)

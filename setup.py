@@ -15,7 +15,6 @@ setup(
         "openai",
         "openml",
         "scikit-learn",
-        "sentence-transformers",
         "mlxtend",
         "stopit",
         "ipython",

@@ -3,7 +3,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from .run_llm_code import run_llm_code
 from .llmautoml import generate_features, list_pipelines
-from .llmensemble import generate_code_embedding
+from .llmensemble import generate_code_embedding, generate_ensemble_manually
 from typing import Union
 import numpy as np
 import pandas as pd
@@ -12,37 +12,33 @@ import uuid
 
 class LLM_AutoML():
     """
-    A classifier that uses the CAAFE algorithm to generate features and a base classifier to make predictions.
-
     Parameters:
-    base_classifier (object, optional): The base classifier to use. If None, a default TabPFNClassifier will be used. Defaults to None.
-    optimization_metric (str, optional): The metric to optimize during feature generation. Can be 'accuracy' or 'auc'. Defaults to 'accuracy'.
-    iterations (int, optional): The number of iterations to run the CAAFE algorithm. Defaults to 10.
-    llm_model (str, optional): The LLM model to use for generating features. Defaults to 'gpt-3.5-turbo'.
-    n_splits (int, optional): The number of cross-validation splits to use during feature generation. Defaults to 10.
-    n_repeats (int, optional): The number of times to repeat the cross-validation during feature generation. Defaults to 2.
     """
     def __init__(
             self,
-            optimization_metric: str = "accuracy",
             iterations: int = 10,
             llm_model: str = "gpt-3.5-turbo",
             n_splits: int = 10,
             n_repeats: int = 2,
-            make_ensemble = True,
+            do_stacking = True,
+            stacking_manually = False,
             task="classification",
             max_total_time = 180,
     ) -> None:
+        if not do_stacking:
+            stacking_manually = False
         self.llm_model = llm_model
         self.iterations = iterations
-        self.optimization_metric = optimization_metric
         self.n_splits = n_splits
         self.n_repeats = n_repeats
         self.pipe = None
-        self.make_ensemble = make_ensemble
+        self.do_stacking = do_stacking
+        self.stacking_manually = stacking_manually
         self.task = task
         self.timeout = max_total_time
         self.uid = str(uuid.uuid4())
+        self.base_models = None
+        self.manually_success = False
     def fit(
             self, X, y, disable_caafe=False
     ):
@@ -111,13 +107,14 @@ class LLM_AutoML():
                 # self.pipe.fit(X, y)
 
             get_pipelines = list_pipelines
+            self.base_models = list_pipelines
             if len(get_pipelines) == 0:
                 raise ValueError("Not pipeline could be created")
 
             if len(get_pipelines) == 1:
                 self.pipe = get_pipelines[0]
             # Create an ensemble if we have more than 1 useful pipeline
-            if len(get_pipelines) > 1 and self.make_ensemble:
+            if len(get_pipelines) > 1 and self.do_stacking and not self.stacking_manually:
                 print('Creating an ensemble with LLM')
                 self.pipe = generate_code_embedding(get_pipelines,
                                                     X,
@@ -129,35 +126,17 @@ class LLM_AutoML():
                                                     identifier=self.uid,
                                                     )
 
-                if self.pipe is None:
-                    print('Ensemble with LLM failed, doing it manually')
-                    if self.task == "classification":
-                        from sklearn.ensemble import VotingClassifier
-                        from sklearn.svm import SVC
-                        from mlxtend.classifier import StackingClassifier
+            if (self.pipe is None) or self.stacking_manually:
+                self.pipe = generate_ensemble_manually(X, y, get_pipelines, task=self.task)
+                self.manually_success = True
+                # Early exit
+                return
 
-                        # Create the first layer of stackers
-                        svc_rbf = SVC(kernel='rbf', probability=True)
-                        stackers = []
-                        for pipeline in get_pipelines:
-                            stacker = StackingClassifier(classifiers=[pipeline],
-                                                         meta_classifier=svc_rbf)
-                            stackers.append(stacker)
 
-                        # Create the second layer of stackers
-                        estimators = [('stacker' + str(i), stacker) for i, stacker in enumerate(stackers)]
-                        self.pipe = VotingClassifier(estimators=estimators, voting='soft')
-
-                    else:
-                        from sklearn.ensemble import VotingRegressor
-                        # Create the ensemble
-                        estimators = [('pipeline' + str(i), pipeline) for i, pipeline in enumerate(get_pipelines)]
-                        self.pipe = VotingRegressor(estimators=estimators)
-
-                # Fit the ensemble to the training data
+            # Fit the ensemble to the training data
 
             # Ensemble not allowed but more than one model in the list, the last model generated will be send it
-            if len(get_pipelines) > 1 and self.make_ensemble == False:
+            if len(get_pipelines) > 1 and self.do_stacking == False:
                 print('Returning the best pipeline without ensemble')
                 # list_performance = [get_score_pipeline(final_pipeline) for final_pipeline in get_pipelines]
                 # Index best pipeline:
@@ -196,6 +175,11 @@ class LLM_AutoML():
 
 
     def predict(self, X):
+        # This step is to conver the data with the preprocessing step since stacking don't consider such steps
+        if self.manually_success:  # Only applicable if the model was ensembled manually
+            preprocessing_steps = list(self.base_models[0].named_steps.values())[:-1]
+            numeric_X = preprocessing_steps[0].fit_transform(X)
+            X = pd.DataFrame(numeric_X, columns=[f"{i}" for i in range(numeric_X.shape[1])])
         if self.task == "classification":
             y = self.pipe.predict(X)  # type: ignore
             # Decode the predicted labels - necessary only if ensemble is not used.
@@ -206,9 +190,19 @@ class LLM_AutoML():
             return self.pipe.predict(X)  # type: ignore
 
     def predict_log_proba(self, X):
+        # This step is to conver the data with the preprocessing step since stacking don't consider such steps
+        if self.manually_success:  # Only applicable if the model was ensembled manually
+            preprocessing_steps = list(self.base_models[0].named_steps.values())[:-1]
+            numeric_X = preprocessing_steps[0].fit_transform(X)
+            X = pd.DataFrame(numeric_X, columns=[f"{i}" for i in range(numeric_X.shape[1])])
         return self.pipe.predict_log_proba(X)
 
     def predict_proba(self, X):
+        # This step is to conver the data with the preprocessing step since stacking don't consider such steps
+        if self.manually_success: # Only applicable if the model was ensembled manually
+            preprocessing_steps = list(self.base_models[0].named_steps.values())[:-1]
+            numeric_X = preprocessing_steps[0].fit_transform(X)
+            X = pd.DataFrame(numeric_X, columns=[f"{i}" for i in range(numeric_X.shape[1])])
         return self.pipe.predict_proba(X)
 
 
