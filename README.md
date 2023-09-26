@@ -27,8 +27,9 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_sta
 automl = LLM_AutoML(
     llm_model="gpt-3.5-turbo", # You can choose "gpt-4" in case you in case you have a paid account
     iterations=3,
-    make_ensemble=True,
-    max_total_time=3600
+    do_stacking = True,
+    stacking_manually = True,
+    max_total_time = 3600,
     )
 
 automl.fit(X_train, y_train)
@@ -64,6 +65,7 @@ automl = LLM_AutoML(
     llm_model="gpt-3.5-turbo", # You can choose "gpt-4" in case you in case you have a paid account
     iterations=3,
     task=type_task,
+    do_stacking = False,
     max_total_time=3600
     )
 
