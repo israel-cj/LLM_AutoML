@@ -127,6 +127,9 @@ class LLM_AutoML():
                                                     )
 
             if (self.pipe is None) or self.stacking_manually:
+                #### mlxtend v2
+                # self.pipe, self.base_models = generate_ensemble_manually(X, y, get_pipelines, task=self.task)
+                #### mlxtend v1
                 self.pipe = generate_ensemble_manually(X, y, get_pipelines, task=self.task)
                 self.manually_success = True
                 # Early exit
@@ -177,6 +180,18 @@ class LLM_AutoML():
     def predict(self, X):
         # This step is to conver the data with the preprocessing step since stacking don't consider such steps
         if self.manually_success:  # Only applicable if the model was ensembled manually
+            # #### mlxtend v2
+            # predictions_base_models = []
+            # for base_model in self.base_models:
+            #     this_predict = base_model.predict(X)
+            #     predictions_base_models.append(this_predict)
+            #
+            # preprocessing_steps = list(self.base_models[0].named_steps.values())[:-1]
+            # transformed_X = preprocessing_steps[0].fit_transform(X)
+            # # Combine the predictions of the base models into a single feature matrix
+            # X = np.hstack((transformed_X, np.column_stack(tuple(predictions_base_models))))
+
+            # This process is using mlxtend v1
             preprocessing_steps = list(self.base_models[0].named_steps.values())[:-1]
             numeric_X = preprocessing_steps[0].fit_transform(X)
             X = pd.DataFrame(numeric_X, columns=[f"{i}" for i in range(numeric_X.shape[1])])
@@ -192,6 +207,18 @@ class LLM_AutoML():
     def predict_log_proba(self, X):
         # This step is to conver the data with the preprocessing step since stacking don't consider such steps
         if self.manually_success:  # Only applicable if the model was ensembled manually
+            # #### mlxtend v2
+            # predictions_base_models = []
+            # for base_model in self.base_models:
+            #     this_predict = base_model.predict(X)
+            #     predictions_base_models.append(this_predict)
+            #
+            # preprocessing_steps = list(self.base_models[0].named_steps.values())[:-1]
+            # transformed_X = preprocessing_steps[0].fit_transform(X)
+            # # Combine the predictions of the base models into a single feature matrix
+            # X = np.hstack((transformed_X, np.column_stack(tuple(predictions_base_models))))
+
+            # This process is using mlxtend v1
             preprocessing_steps = list(self.base_models[0].named_steps.values())[:-1]
             numeric_X = preprocessing_steps[0].fit_transform(X)
             X = pd.DataFrame(numeric_X, columns=[f"{i}" for i in range(numeric_X.shape[1])])
@@ -200,6 +227,18 @@ class LLM_AutoML():
     def predict_proba(self, X):
         # This step is to conver the data with the preprocessing step since stacking don't consider such steps
         if self.manually_success: # Only applicable if the model was ensembled manually
+            # #### mlxtend v2
+            # predictions_base_models = []
+            # for base_model in self.base_models:
+            #     this_predict = base_model.predict(X)
+            #     predictions_base_models.append(this_predict)
+            #
+            # preprocessing_steps = list(self.base_models[0].named_steps.values())[:-1]
+            # transformed_X = preprocessing_steps[0].fit_transform(X)
+            # # Combine the predictions of the base models into a single feature matrix
+            # X = np.hstack((transformed_X, np.column_stack(tuple(predictions_base_models))))
+
+            # This process is using mlxtend v1
             preprocessing_steps = list(self.base_models[0].named_steps.values())[:-1]
             numeric_X = preprocessing_steps[0].fit_transform(X)
             X = pd.DataFrame(numeric_X, columns=[f"{i}" for i in range(numeric_X.shape[1])])

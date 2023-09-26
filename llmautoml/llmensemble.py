@@ -198,6 +198,7 @@ def generate_code_embedding(
 # https://developer.ibm.com/articles/stack-machine-learning-models-get-better-results/
 # https://medium.com/@brijesh_soni/stacking-to-improve-model-performance-a-comprehensive-guide-on-ensemble-learning-in-python-9ed53c93ce28
 
+#### this is working mlxtend v1 but I don't see the improvement
 def generate_ensemble_manually(
         X, y,
         get_pipelines,
@@ -251,6 +252,145 @@ def generate_ensemble_manually(
         numeric_X = pd.DataFrame(numeric_X, columns=[f"{i}" for i in range(numeric_X.shape[1])])
         stacker.fit(numeric_X, y)
     return stacker
+
+
+# # #### mlxtend v2
+# def generate_ensemble_manually(
+#         X, y,
+#         get_pipelines,
+#         task='classification',
+# ):
+#     print('Doing stacking manually')
+#     if task == "classification":
+#         import numpy as np
+#         from sklearn.svm import SVC
+#         from sklearn.model_selection import train_test_split
+#         from mlxtend.classifier import StackingCVClassifier
+#
+#         predictions_base_models = []
+#         new_base_models = []
+#         for base_model in get_pipelines:
+#             base_model.fit(X, y)
+#             new_base_models.append(base_model)
+#             this_predict = base_model.predict(X)
+#             predictions_base_models.append(this_predict)
+#
+#         # Train the meta-model
+#         preprocessing_steps = list(get_pipelines[0].named_steps.values())[:-1]
+#         transformed_X = preprocessing_steps[0].fit_transform(X)
+#         # Combine the predictions of the base models into a single feature matrix
+#         X_test_meta = np.hstack((transformed_X, np.column_stack(tuple(predictions_base_models))))
+#
+#         # Define the meta regressor
+#         svc_rbf = SVC(kernel='rbf', probability=True)
+#
+#         # Base models without preprocessing steps
+#         estimators = [list(pipe.named_steps.values())[-1] for pipe in get_pipelines]
+#
+#         # Create the stacked model
+#         stacker = StackingCVClassifier(classifiers=estimators,
+#                                        meta_classifier=svc_rbf,
+#                                        cv=5,
+#                                        use_features_in_secondary=True,
+#                                        store_train_meta_features=True,
+#                                        )
+#
+#         stacker.fit(X_test_meta, y)
+#
+#     else:
+#         import numpy as np
+#         from sklearn.svm import SVR
+#         from sklearn.model_selection import train_test_split
+#         from mlxtend.regressor import StackingCVRegressor
+#
+#         predictions_base_models = []
+#         new_base_models = []
+#         for base_model in get_pipelines:
+#             base_model.fit(X, y)
+#             new_base_models.append(base_model)
+#             this_predict = base_model.predict(X)
+#             predictions_base_models.append(this_predict)
+#
+#         # Train the meta-model
+#         preprocessing_steps = list(get_pipelines[0].named_steps.values())[:-1]
+#         transformed_X = preprocessing_steps[0].fit_transform(X)
+#         # Combine the predictions of the base models into a single feature matrix
+#         X_test_meta = np.hstack((transformed_X, np.column_stack(tuple(predictions_base_models))))
+#
+#         # Define the meta regressor
+#         svr_rbf = SVR(kernel='rbf')
+#
+#         # Base models without preprocessing steps
+#         estimators = [list(pipe.named_steps.values())[-1] for pipe in get_pipelines]
+#
+#         # Create the stacked model
+#         stacker = StackingCVRegressor(regressors=estimators,
+#                                       meta_regressor=svr_rbf,
+#                                       cv=5,
+#                                       use_features_in_secondary=True,
+#                                       store_train_meta_features=True,
+#                                       )
+#         stacker.fit(X_test_meta, y)
+#
+#     return stacker, new_base_models
+
+###### IT IS WORKING BUT WITHOUT IMPROVEMENT
+# def generate_ensemble_manually(
+#         X, y,
+#         get_pipelines,
+#         task='classification',
+# ):
+#     print('Doing stacking manually')
+#     if task == "classification":
+#         import numpy as np
+#         from sklearn.svm import SVC
+#         from sklearn.model_selection import train_test_split
+#
+#         X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+#
+#         predictions_base_models = []
+#         new_base_modesl = []
+#         for base_model in get_pipelines:
+#             base_model.fit(X_train, y_train)
+#             new_base_modesl.append(base_model)
+#             this_predict = base_model.predict(X_test)
+#             predictions_base_models.append(this_predict)
+#
+#         # Train the meta-model
+#         preprocessing_steps = list(get_pipelines[0].named_steps.values())[:-1]
+#         transformed_X = preprocessing_steps[0].fit_transform(X_test)
+#         # Combine the predictions of the base models into a single feature matrix
+#         X_test_meta = np.hstack((transformed_X, np.column_stack(tuple(predictions_base_models))))
+#
+#         # Train the meta-model on the combined feature matrix and the target values
+#         meta_model = SVC(kernel='rbf', probability=True)
+#         meta_model.fit(X_test_meta, y_test)
+#     else:
+#         import numpy as np
+#         from sklearn.svm import SVR
+#         from sklearn.model_selection import train_test_split
+#
+#         X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+#
+#         predictions_base_models = []
+#         new_base_modesl = []
+#         for base_model in get_pipelines:
+#             base_model.fit(X_train, y_train)
+#             new_base_modesl.append(base_model)
+#             this_predict = base_model.predict(X_test)
+#             predictions_base_models.append(this_predict)
+#
+#         # Train the meta-model
+#         preprocessing_steps = list(get_pipelines[0].named_steps.values())[:-1]
+#         transformed_X = preprocessing_steps[0].fit_transform(X_test)
+#         # Combine the predictions of the base models into a single feature matrix
+#         X_test_meta = np.hstack((transformed_X, np.column_stack(tuple(predictions_base_models))))
+#
+#         # Define the meta regressor
+#         meta_model = SVR(kernel='rbf')
+#         meta_model.fit(X_test_meta, y_test)
+#
+#     return meta_model, new_base_modesl
 
 # def generate_ensemble_manually(
 #         X, y,
