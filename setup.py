@@ -18,6 +18,9 @@ setup(
         "mlxtend",
         "stopit",
         "ipython",
+        "ott-jax",
+        "dirty_cat",
+        "gdown",
     ],
 )
 

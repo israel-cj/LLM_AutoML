@@ -4,7 +4,7 @@ import time
 import openai
 from sklearn.model_selection import train_test_split
 from .run_llm_code import run_llm_code
-from .similarity_probability_mix import TransferedPipelines
+from .similarity_optimal_transport import TransferedPipelines
 
 list_pipelines = []
 
@@ -24,7 +24,7 @@ def possible_errors(e):
 
 
 def get_prompt(
-        dataset_X=None, task='classification', **kwargs
+        dataset_X=None, dataset_y=None, task='classification', **kwargs
 ):
     if task == 'classification':
         metric_prompt = 'Log loss'
@@ -34,7 +34,7 @@ def get_prompt(
         metric_prompt = 'Mean Squared Error'
         additional_data = ''
         additional_instruction_code = "If ‘f_regression’ will be used in the Pipeline, import the necessary packages"
-    similar_pipelines = TransferedPipelines(dataset_X=dataset_X, task=task, number_of_pipelines=3)
+    similar_pipelines = TransferedPipelines(X_train=dataset_X, y_train=dataset_y, task=task, number_of_pipelines=3)
     return f"""
 The dataframe split in ‘X_train’ and ‘y_train’ is loaded in memory.
 This code was written by an expert data scientist working to create a suitable pipeline (preprocessing techniques and estimator) for such dataframe, the task is ‘{task}’. It is a snippet of code that imports the packages necessary to create a ‘sklearn’ pipeline together with a description. This code takes inspiration from previous similar pipelines and their respective ‘{metric_prompt}’ which worked for a related dataframe. Those examples contain the word ‘Pipeline’ which refers to the preprocessing steps (optional) and model necessary, the word ‘data’ refers to ‘X_train’ and ‘y_train’ used during training, and finally ‘{metric_prompt}’ represents the performance of the model (the closes to 0 the better). The previous similar pipelines for this dataframe are:
@@ -61,11 +61,12 @@ Codeblock:
 # Each codeblock either generates {how_many} or drops bad columns (Feature selection).
 
 
-def build_prompt_from_df(dataset_X=None,
+def build_prompt_from_df(dataset_X=None, dataset_y=None,
         task='classification'):
 
     prompt, similar_pipelines = get_prompt(
         dataset_X=dataset_X,
+        dataset_y=dataset_y,
         task=task,
     )
 
@@ -99,6 +100,7 @@ def generate_features(
         display_method = print
     prompt, similar_pipelines = build_prompt_from_df(
         dataset_X=X,
+        dataset_y=y,
         task=task,
     )
 
@@ -231,8 +233,8 @@ def generate_features(
             list_performance.append(performance)
             list_pipelines.append(pipe)
             print('The performance of this pipeline is: ', performance)
-            # Get news similar_pipelines to explore more
-            similar_pipelines = TransferedPipelines(dataset_X=X, task=task, number_of_pipelines=3)
+            # # Get news similar_pipelines to explore more
+            # similar_pipelines = TransferedPipelines(X_train=X, y_train=y, task=task, number_of_pipelines=3)
             # Get the current timestamp
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             # Write the data to a CSV file

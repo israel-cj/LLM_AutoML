@@ -135,13 +135,10 @@ class LLM_AutoML():
                 # Early exit
                 return
 
-
             # Fit the ensemble to the training data
-
             # Ensemble not allowed but more than one model in the list, the last model generated will be send it
             if len(get_pipelines) > 1 and self.do_stacking == False:
                 print('Returning the best pipeline without ensemble')
-                # list_performance = [get_score_pipeline(final_pipeline) for final_pipeline in get_pipelines]
                 # Index best pipeline:
                 index_best_pipeline = list_performance_pipelines.index(max(list_performance_pipelines))
                 # Return the one with the best performance
