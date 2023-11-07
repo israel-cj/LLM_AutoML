@@ -3,6 +3,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from .run_llm_code import run_llm_code
 from .llmautoml import generate_features, list_pipelines
+from .llmoptimization import optimize_LLM
 from .llmensemble import generate_code_embedding, generate_ensemble_manually
 from typing import Union
 import numpy as np
@@ -32,8 +33,8 @@ class LLM_AutoML():
         self.n_splits = n_splits
         self.n_repeats = n_repeats
         self.pipe = None
-        self.do_stacking = do_stacking
-        self.stacking_manually = stacking_manually
+        # self.do_stacking = do_stacking
+        # self.stacking_manually = stacking_manually
         self.task = task
         self.timeout = max_total_time
         self.uid = str(uuid.uuid4())
@@ -56,27 +57,6 @@ class LLM_AutoML():
         # global list_pipelines # To retrieve at least one result if the timeout is reached
         # Generate a unique UUID
         print('uid', self.uid)
-        def get_score_pipeline(pipeline):
-            # A small sample if the dataset is too large
-            value_to_consider_for_fast_training = 5000
-            if self.task == "classification":
-                if len(X) >= value_to_consider_for_fast_training:
-                    X_train, X_test, y_train, y_test = train_test_split(X, y,
-                                                                        train_size=value_to_consider_for_fast_training,
-                                                                        stratify=y, random_state=0)
-                else:
-                    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, stratify=y,
-                                                                        random_state=0)
-            else:
-                if len(X) >= value_to_consider_for_fast_training:
-                    X_train, X_test, y_train, y_test = train_test_split(X, y,
-                                                                        train_size=value_to_consider_for_fast_training,
-                                                                        random_state=0)
-                else:
-                    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, random_state=0)
-
-            performance = pipeline.score(X_train, y_train)
-            return performance
 
         if self.task == "classification":
             y_ = y.squeeze() if isinstance(y, pd.DataFrame) else y
@@ -111,83 +91,24 @@ class LLM_AutoML():
             if len(get_pipelines) == 0:
                 raise ValueError("Not pipeline could be created")
 
-            if len(get_pipelines) == 1:
-                self.pipe = get_pipelines[0]
-            # Create an ensemble if we have more than 1 useful pipeline
-            if len(get_pipelines) > 1 and self.do_stacking and not self.stacking_manually:
-                print('Creating an ensemble with LLM')
-                self.pipe = generate_code_embedding(get_pipelines,
-                                                    X,
-                                                    y,
-                                                    model=self.llm_model,
-                                                    display_method="markdown",
-                                                    task=self.task,
-                                                    iterations_max=2,
-                                                    identifier=self.uid,
-                                                    )
-
-            if (self.pipe is None) or self.stacking_manually:
-                #### mlxtend v2
-                # self.pipe, self.base_models = generate_ensemble_manually(X, y, get_pipelines, task=self.task)
-                #### mlxtend v1
-                self.pipe = generate_ensemble_manually(X, y, get_pipelines, task=self.task)
-                self.manually_success = True
-                # Early exit
-                return
-
-            # Fit the ensemble to the training data
-            # Ensemble not allowed but more than one model in the list, the last model generated will be send it
-            if len(get_pipelines) > 1 and self.do_stacking == False:
-                print('Returning the best pipeline without ensemble')
-                # Index best pipeline:
-                index_best_pipeline = list_performance_pipelines.index(max(list_performance_pipelines))
-                # Return the one with the best performance
-                self.pipe = get_pipelines[index_best_pipeline]
+            self.pipe = optimize_LLM(
+                                    X=X,
+                                    y=y,
+                                    model=self.llm_model,
+                                    task=self.task,
+                                    iterations_max=8,
+                                    identifier= self.uid,
+                            )
             print('The model has been created, final fit')
             self.pipe.fit(X, y)
 
         except stopit.TimeoutException:
             print("Timeout expired")
 
-            # Train in a small portion to return something basic at least
-            # A small sample if the dataset is too large
-            value_to_consider_for_fast_training = 5000
-            if self.task == "classification":
-                if len(X) >= value_to_consider_for_fast_training:
-                    X_train, X_test, y_train, y_test = train_test_split(X, y,
-                                                                        train_size=value_to_consider_for_fast_training,
-                                                                        stratify=y, random_state=0)
-                else:
-                    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, stratify=y,
-                                                                        random_state=0)
-            else:
-                if len(X) >= value_to_consider_for_fast_training:
-                    X_train, X_test, y_train, y_test = train_test_split(X, y,
-                                                                        train_size=value_to_consider_for_fast_training,
-                                                                        random_state=0)
-                else:
-                    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, random_state=0)
-
-            if self.pipe is None and len(list_pipelines)>0:
-                index_best_pipeline = list_performance_pipelines.index(max(list_performance_pipelines))
-                self.pipe = list_pipelines[index_best_pipeline]
-                self.pipe.fit(X_train, y_train)
-
 
     def predict(self, X):
         # This step is to conver the data with the preprocessing step since stacking don't consider such steps
         if self.manually_success:  # Only applicable if the model was ensembled manually
-            # #### mlxtend v2
-            # predictions_base_models = []
-            # for base_model in self.base_models:
-            #     this_predict = base_model.predict(X)
-            #     predictions_base_models.append(this_predict)
-            #
-            # preprocessing_steps = list(self.base_models[0].named_steps.values())[:-1]
-            # transformed_X = preprocessing_steps[0].fit_transform(X)
-            # # Combine the predictions of the base models into a single feature matrix
-            # X = np.hstack((transformed_X, np.column_stack(tuple(predictions_base_models))))
-
             # This process is using mlxtend v1
             preprocessing_steps = list(self.base_models[0].named_steps.values())[:-1]
             numeric_X = preprocessing_steps[0].fit_transform(X)
@@ -204,17 +125,6 @@ class LLM_AutoML():
     def predict_log_proba(self, X):
         # This step is to conver the data with the preprocessing step since stacking don't consider such steps
         if self.manually_success:  # Only applicable if the model was ensembled manually
-            # #### mlxtend v2
-            # predictions_base_models = []
-            # for base_model in self.base_models:
-            #     this_predict = base_model.predict(X)
-            #     predictions_base_models.append(this_predict)
-            #
-            # preprocessing_steps = list(self.base_models[0].named_steps.values())[:-1]
-            # transformed_X = preprocessing_steps[0].fit_transform(X)
-            # # Combine the predictions of the base models into a single feature matrix
-            # X = np.hstack((transformed_X, np.column_stack(tuple(predictions_base_models))))
-
             # This process is using mlxtend v1
             preprocessing_steps = list(self.base_models[0].named_steps.values())[:-1]
             numeric_X = preprocessing_steps[0].fit_transform(X)
@@ -224,17 +134,6 @@ class LLM_AutoML():
     def predict_proba(self, X):
         # This step is to conver the data with the preprocessing step since stacking don't consider such steps
         if self.manually_success: # Only applicable if the model was ensembled manually
-            # #### mlxtend v2
-            # predictions_base_models = []
-            # for base_model in self.base_models:
-            #     this_predict = base_model.predict(X)
-            #     predictions_base_models.append(this_predict)
-            #
-            # preprocessing_steps = list(self.base_models[0].named_steps.values())[:-1]
-            # transformed_X = preprocessing_steps[0].fit_transform(X)
-            # # Combine the predictions of the base models into a single feature matrix
-            # X = np.hstack((transformed_X, np.column_stack(tuple(predictions_base_models))))
-
             # This process is using mlxtend v1
             preprocessing_steps = list(self.base_models[0].named_steps.values())[:-1]
             numeric_X = preprocessing_steps[0].fit_transform(X)

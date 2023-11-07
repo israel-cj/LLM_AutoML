@@ -45,7 +45,6 @@ This code was written by an expert data scientist working to create a suitable p
 
 Code formatting for each pipeline created:
 ```python
-# Short explanation of why this pipeline could work 
 (Import ‘sklearn’ packages to create a pipeline object called 'pipe'. In addition, call its respective 'fit' function to feed the model with 'X_train' and 'y_train'
 Along with the necessary packages, always call 'make_pipeline' from sklearn.
 Usually is good to start the pipeline using 'SimpleImputer' since ‘Nan’ values are not allowed in {task}). 
@@ -116,7 +115,7 @@ def generate_features(
             model=model,
             messages=messages,
             stop=["```end"],
-            temperature=0.5,
+            temperature=1,
             max_tokens=500,
         )
         code = completion["choices"][0]["message"]["content"]
@@ -124,20 +123,10 @@ def generate_features(
         return code
 
     def execute_and_evaluate_code_block(code):
-        # A small sample if the dataset is too large
-        value_to_consider_for_fast_training = 5000
         if task == "classification":
-            if len(X) >= value_to_consider_for_fast_training:
-                X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=value_to_consider_for_fast_training,
-                                                          stratify=y, random_state=0)
-            else:
-                X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, stratify=y, random_state=0)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25,  stratify=y, random_state=0)
         else:
-            if len(X) >= value_to_consider_for_fast_training:
-                X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=value_to_consider_for_fast_training, random_state=0)
-            else:
-                X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, random_state=0)
-
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=0)
         try:
             pipe = run_llm_code(
                 code,
@@ -259,3 +248,4 @@ def generate_features(
             ]
 
     return code, prompt, messages, list_codeblocks, list_performance
+
