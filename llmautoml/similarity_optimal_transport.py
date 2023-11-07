@@ -85,7 +85,8 @@ def TransferedPipelines(X_train, y_train, number_of_pipelines=5, task='classific
     else:
         # Look for the cost of each dataset vs the new dataset
         costs = []
-        for geom_yy in list_geom_yy[:5]: # change this
+        #for geom_yy in list_geom_yy[:5]: # change this
+        for geom_yy in list_geom_yy:  # change this
             prob = ott.problems.quadratic.quadratic_problem.QuadraticProblem(geom_xx, geom_yy)
             try:
                 solver = gromov_wasserstein.GromovWasserstein(rank=6) # this is the proposal of prabhant
