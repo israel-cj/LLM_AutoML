@@ -115,7 +115,7 @@ def generate_features(
             model=model,
             messages=messages,
             stop=["```end"],
-            temperature=1,
+            temperature=0.5,
             max_tokens=500,
         )
         code = completion["choices"][0]["message"]["content"]

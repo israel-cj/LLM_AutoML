@@ -46,7 +46,6 @@ def optimize_LLM(
         model="gpt-3.5-turbo",
         display_method="markdown",
         task='classification',
-        just_print_prompt=False,
         iterations_max=8,
         identifier='',
 ):
@@ -70,10 +69,6 @@ def optimize_LLM(
     else:
 
         display_method = print
-
-    if just_print_prompt:
-        code, prompt = None, prompt
-        return code, prompt, None
 
     def generate_code(messages):
         if model == "skip":

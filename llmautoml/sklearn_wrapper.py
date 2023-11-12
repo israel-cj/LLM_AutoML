@@ -94,9 +94,10 @@ class LLM_AutoML():
             self.pipe = optimize_LLM(
                                     X=X,
                                     y=y,
-                                    model=self.llm_model,
+                                    # model=self.llm_model,
+                                    model='gpt-4',
                                     task=self.task,
-                                    iterations_max=8,
+                                    iterations_max=20,
                                     identifier= self.uid,
                             )
             print('The model has been created, final fit')
