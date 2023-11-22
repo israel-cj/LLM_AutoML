@@ -4,6 +4,9 @@ This is a project based on CAAFE, semi-automate your feature engineering process
 
 There are two requirements, define if the problem is 'classification' or 'regression' and provide a the dataset split in 'X' and 'y'.
 
+
+![LLM AutoML](animated_automl.gif)
+
 ## Classification
 
 ```python
